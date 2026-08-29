@@ -1,0 +1,1588 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>The Long Swim — Ocean Survival Game</title>
+<meta name="description" content="Free educational browser game: guide a sawfish, hammerhead shark or sea turtle past fishing hooks, ghost nets and plastic bags to reach home. Learn real facts about bycatch and ocean conservation. Play instantly — no download, works on desktop, tablet and phone.">
+<link rel="canonical" href="https://rockpoolarcade.com/the-long-swim/">
+<meta name="theme-color" content="#06121f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Long Swim">
+<meta property="og:title" content="The Long Swim — Ocean Survival Game">
+<meta property="og:description" content="Guide a sawfish, hammerhead or sea turtle past hooks, ghost nets and plastic to reach home. A free educational game about bycatch and ocean conservation.">
+<meta property="og:url" content="https://rockpoolarcade.com/the-long-swim/">
+<meta property="og:image" content="https://rockpoolarcade.com/the-long-swim/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Long Swim — Ocean Survival Game">
+<meta name="twitter:description" content="Guide a sawfish, hammerhead or sea turtle past hooks, ghost nets and plastic to reach home. Free educational ocean game.">
+<meta name="twitter:image" content="https://rockpoolarcade.com/the-long-swim/og-image.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128034;</text></svg>">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "The Long Swim",
+  "url": "https://rockpoolarcade.com/the-long-swim/",
+  "description": "An educational side-scrolling browser game about ocean conservation. Play as a sawfish, hammerhead shark or sea turtle and dodge fishing hooks, ghost nets, plastic bags and hunger to reach your island home. Includes real facts about bycatch, ghost fishing gear and marine plastic.",
+  "genre": ["Educational", "Arcade", "Survival"],
+  "gamePlatform": ["Web browser", "Desktop", "Tablet", "Mobile"],
+  "playMode": "SinglePlayer",
+  "isAccessibleForFree": true,
+  "operatingSystem": "Any",
+  "applicationCategory": "Game",
+  "inLanguage": "en",
+  "author": { "@type": "Person", "name": "James Walshe" },
+  "about": ["Marine conservation", "Bycatch", "Ghost nets", "Ocean plastic", "Sea turtles", "Sawfish", "Hammerhead sharks"]
+}
+</script>
+<noscript>
+  <h1>The Long Swim — a free educational ocean game</h1>
+  <p>The Long Swim is a browser game about ocean conservation. Choose a sawfish, hammerhead shark or sea turtle
+  and swim through fishing grounds — dodging baited hooks, drifting ghost nets and plastic bags — to reach the
+  tropical island you call home. Along the way you'll learn real facts about bycatch, lost fishing gear and marine
+  plastic, with links to the Australian Marine Conservation Society and the Sea Turtle Foundation.
+  JavaScript is required to play.</p>
+</noscript>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<style>
+  :root{
+    --abyss:#06121f; --deep:#0a2a43; --mid:#14547a; --sun:#7ec8e3;
+    --sand:#e8c98a; --coral:#ff7a59; --cream:#f2e9d8; --kelp:#2e8b6a;
+    --panel:rgba(6,18,31,.82);
+  }
+  html,body{height:100%; overscroll-behavior:none;}
+  body{
+    margin:0; background:var(--abyss); color:var(--cream);
+    font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+  }
+  #stage{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;}
+  canvas{display:block; background:var(--deep); box-shadow:0 0 80px rgba(0,0,0,.6); touch-action:none;}
+  /* floating virtual joystick for touch play */
+  #joy{position:fixed; width:116px; height:116px; border-radius:50%; display:none; z-index:6;
+       border:2px solid rgba(242,233,216,.45); background:rgba(6,18,31,.3); pointer-events:none;
+       transform:translate(-50%,-50%);}
+  #joyKnob{position:absolute; left:50%; top:50%; width:52px; height:52px; border-radius:50%;
+       background:rgba(242,233,216,.8); transform:translate(-50%,-50%);}
+  #fsBtn{pointer-events:auto; cursor:pointer; font-family:'Bungee',cursive; font-size:12px;
+       color:var(--sun); background:transparent; border:none; letter-spacing:1px; padding:0;}
+  #fsBtn:focus-visible{outline:2px solid var(--sun); outline-offset:2px;}
+  /* ---------- HUD ---------- */
+  #hud{position:absolute; left:0; right:0; top:0; display:none; padding:10px 16px;
+       pointer-events:none; align-items:center; gap:16px;}
+  #hud.on{display:flex;}
+  .hud-box{background:var(--panel); border:1px solid rgba(242,233,216,.18);
+           border-radius:10px; padding:6px 12px; display:flex; align-items:center; gap:8px;}
+  #hearts{font-size:18px; letter-spacing:2px; color:var(--coral); min-width:70px;}
+  #lvlLabel{font-family:'Bungee',cursive; font-size:13px; color:var(--sun); letter-spacing:1px;}
+  #foodLabel{font-size:14px; font-weight:700; color:var(--cream); white-space:nowrap;}
+  #progWrap{flex:1; height:12px; background:rgba(242,233,216,.15); border-radius:6px; overflow:hidden;
+            border:1px solid rgba(242,233,216,.18); position:relative;}
+  #progBar{height:100%; width:0%; background:linear-gradient(90deg,var(--mid),var(--sun)); border-radius:6px;}
+  #progHome{position:absolute; right:4px; top:-2px; font-size:11px;}
+  #hungerLabel{font-size:11px; font-weight:800; letter-spacing:1px; color:var(--sun);}
+  #hungerBarWrap{width:80px; height:9px; background:rgba(242,233,216,.15); border-radius:5px; overflow:hidden;}
+  #hungerBar{height:100%; width:100%; background:#7fd8a5; border-radius:5px;}
+  /* toast for educational moments */
+  #toast{position:absolute; left:50%; bottom:34px; transform:translateX(-50%);
+         background:var(--panel); border:1px solid var(--coral); border-radius:12px;
+         padding:12px 20px; max-width:min(88vw,560px); font-size:14px; line-height:1.45;
+         opacity:0; transition:opacity .3s; pointer-events:none; text-align:center;}
+  #toast.on{opacity:1;}
+  #toast b{color:var(--coral);}
+  /* ---------- overlays ---------- */
+  .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+           background:rgba(4,12,22,.55); backdrop-filter:blur(3px);}
+  .overlay.on{display:flex;}
+  .card{background:var(--panel); border:1px solid rgba(126,200,227,.35); border-radius:18px;
+        padding:30px 38px; max-width:680px; width:min(94vw,680px); text-align:center;
+        box-shadow:0 24px 60px rgba(0,0,0,.5); max-height:92vh; overflow-y:auto;}
+  h1{font-family:'Bungee',cursive; font-size:clamp(28px,6vw,48px); margin:0 0 4px; color:var(--sun);
+     text-shadow:0 4px 0 rgba(0,0,0,.35); text-wrap:balance;}
+  h2{font-family:'Bungee',cursive; font-size:clamp(20px,4vw,30px); margin:0 0 10px; color:var(--sun); text-wrap:balance;}
+  .tag{color:var(--cream); opacity:.85; margin:0 0 18px; font-size:15px;}
+  .chars{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:16px;}
+  .char{cursor:pointer; background:rgba(20,84,122,.35); border:2px solid rgba(126,200,227,.3);
+        border-radius:14px; padding:12px 10px 10px; width:168px; transition:transform .12s, border-color .12s;
+        color:var(--cream); font-family:inherit;}
+  .char:hover{transform:translateY(-3px);}
+  .char.sel{border-color:var(--coral); background:rgba(255,122,89,.14);}
+  .char canvas{background:transparent; box-shadow:none; margin:0 auto 4px;}
+  .char .nm{font-family:'Bungee',cursive; font-size:14px; color:var(--sun); margin-bottom:4px;}
+  .char .ds{font-size:11.5px; opacity:.82; line-height:1.4; margin-top:2px;}
+  .diffs{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+  .diff{cursor:pointer; font-family:'Bungee',cursive; font-size:13px; letter-spacing:1px;
+        color:var(--sun); background:rgba(20,84,122,.35); border:2px solid rgba(126,200,227,.3);
+        border-radius:10px; padding:10px 16px; transition:transform .1s, border-color .1s;}
+  .diff:hover{transform:translateY(-2px);}
+  .diff.sel{border-color:var(--coral); color:var(--coral);}
+  .btn{font-family:'Bungee',cursive; font-size:17px; color:var(--abyss); background:var(--coral);
+       border:none; border-radius:12px; padding:13px 30px; cursor:pointer; letter-spacing:1px;
+       box-shadow:0 5px 0 #b34a31; transition:transform .1s;}
+  .btn:hover{transform:translateY(-2px);}
+  .btn:active{transform:translateY(2px); box-shadow:0 2px 0 #b34a31;}
+  .btn.ghost{background:transparent; color:var(--sun); box-shadow:none; border:2px solid var(--sun); padding:11px 22px;}
+  .btn:focus-visible,.char:focus-visible,.diff:focus-visible{outline:3px solid var(--sun); outline-offset:2px;}
+  .row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .help{margin-top:16px; font-size:13px; opacity:.75; line-height:1.6;}
+  kbd{background:rgba(242,233,216,.15); border:1px solid rgba(242,233,216,.3); border-radius:5px;
+      padding:1px 7px; font-family:inherit; font-weight:800; font-size:12px;}
+  .stats{display:flex; gap:26px; justify-content:center; margin:14px 0 20px; font-size:15px;}
+  .stats b{color:var(--sun); font-size:22px; display:block; font-family:'Bungee',cursive;}
+  .fact{background:rgba(126,200,227,.1); border:1px solid rgba(126,200,227,.3); border-radius:10px;
+        padding:12px 16px; font-size:13.5px; line-height:1.5; margin:0 0 20px; text-align:left;}
+  .fact b{color:var(--sun);}
+  .learn{display:flex; align-items:center; justify-content:center; gap:18px; margin:0 0 18px; flex-wrap:wrap;}
+  .learn img{width:96px; height:96px; border-radius:10px; border:3px solid var(--cream); background:var(--cream);}
+  .learn .txt{max-width:270px; text-align:left; font-size:13px; line-height:1.5; opacity:.92;}
+  .learn a.btn{display:inline-block; text-decoration:none; font-size:12px; padding:9px 14px; margin-top:8px;}
+  #exitBtn{pointer-events:auto; cursor:pointer; font-family:'Bungee',cursive; font-size:12px;
+    color:var(--coral); background:transparent; border:none; letter-spacing:1px; padding:0;}
+  #exitBtn:focus-visible{outline:2px solid var(--sun); outline-offset:2px;}
+  #introName{color:var(--sun); font-family:'Bungee',cursive; font-size:15px; letter-spacing:1px;}
+  #introCard h2{color:var(--coral);}
+  @media (prefers-reduced-motion: reduce){
+    .char,.btn,.diff{transition:none;}
+    #toast{transition:none;}
+  }
+</style>
+
+<div id="stage"><canvas id="game" width="960" height="540"></canvas></div>
+
+<div id="hud">
+  <div class="hud-box"><span id="lvlLabel">EASY</span></div>
+  <div class="hud-box"><span id="hearts">&#10084;&#10084;&#10084;</span></div>
+  <div class="hud-box"><span id="hungerLabel">FOOD</span><div id="hungerBarWrap"><div id="hungerBar"></div></div></div>
+  <div id="progWrap"><div id="progBar"></div><span id="progHome">&#127965;</span></div>
+  <div class="hud-box"><span id="foodLabel">Fish 0</span></div>
+  <div class="hud-box"><button id="fsBtn" aria-label="Toggle full screen">FULL</button></div>
+  <div class="hud-box"><button id="exitBtn" aria-label="Exit to menu">&#10005; EXIT</button></div>
+</div>
+
+<div id="toast"></div>
+<div id="joy"><div id="joyKnob"></div></div>
+
+<div class="overlay on" id="menu">
+  <div class="card">
+    <h1>The Long Swim</h1>
+    <p class="tag">Dodge the hooks. Slip past the nets. Reach the island you call home — and learn why the real ocean is a risky place for these three.</p>
+    <div class="chars" id="charRow"></div>
+    <div class="diffs" id="diffRow"></div>
+    <div class="row">
+      <button class="btn" id="playBtn">Dive In</button>
+      <button class="btn ghost" id="menuFsBtn">Full Screen</button>
+    </div>
+    <p class="help">
+      Swim with <kbd>&#8592;</kbd><kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+      &nbsp;&middot;&nbsp; Pause <kbd>P</kbd> &nbsp;&middot;&nbsp; On touch screens, touch and drag — a joystick appears under your finger.<br>
+      The current always pushes east — keep moving, and don't get pinned against a net.
+      Eat as you go: an empty food bar costs a heart.
+    </p>
+  </div>
+</div>
+
+<div class="overlay" id="intro">
+  <div class="card" id="introCard">
+    <span id="introName">EASY</span>
+    <h2 id="introTitle">Sheltered Bay</h2>
+    <p class="tag" id="introDesc"></p>
+    <p class="fact" id="introFact"></p>
+    <button class="btn" id="introGo">Swim</button>
+  </div>
+</div>
+
+<div class="overlay" id="complete">
+  <div class="card">
+    <h2 id="completeTitle">Home!</h2>
+    <p class="tag" id="completeSub">You made it to the island.</p>
+    <div class="stats">
+      <div><b id="stHearts">3</b>hearts left</div>
+      <div><b id="stFood">0</b><span id="stFoodLabel">fish eaten</span></div>
+      <div><b id="stTime">0:00</b>time</div>
+    </div>
+    <div class="learn" id="learnComplete"></div>
+    <div class="row">
+      <button class="btn" id="nextDiffBtn">Next: Medium</button>
+      <button class="btn ghost" id="replayBtn">Swim Again</button>
+      <button class="btn ghost" id="homeMenuBtn">Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="gameover">
+  <div class="card">
+    <h2 style="color:var(--coral)">Caught!</h2>
+    <p class="tag" id="goSub">The fleet got you this time. The reef still waits.</p>
+    <p class="fact" id="goFact"></p>
+    <div class="learn" id="learnOver"></div>
+    <div class="row">
+      <button class="btn" id="retryBtn">Try Again</button>
+      <button class="btn ghost" id="goMenuBtn">Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="paused">
+  <div class="card">
+    <h2>Paused</h2>
+    <p class="tag">The ocean holds its breath.</p>
+    <div class="row">
+      <button class="btn" id="resumeBtn">Resume</button>
+      <button class="btn ghost" id="pauseExitBtn">Exit to Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================== setup ============================== */
+const CW = 960, CH = 540, SURF = 100, FLOOR = 540;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let viewScale = 1;
+function fit(){
+  const s = Math.min(innerWidth / CW, innerHeight / CH);
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.style.width  = (CW * s) + 'px';
+  canvas.style.height = (CH * s) + 'px';
+  canvas.width  = Math.round(CW * s * dpr);
+  canvas.height = Math.round(CH * s * dpr);
+  viewScale = s * dpr;
+}
+addEventListener('resize', fit); fit();
+
+const $ = id => document.getElementById(id);
+const overlays = ['menu','intro','complete','gameover','paused'];
+function show(id){ overlays.forEach(o => $(o).classList.toggle('on', o === id)); }
+function hideOverlays(){ overlays.forEach(o => $(o).classList.remove('on')); }
+
+/* ============================== save ============================== */
+let save = { species: 'turtle', diff: 'easy', done: {} };
+try {
+  const raw = localStorage.getItem('longswim2');
+  if (raw) save = Object.assign(save, JSON.parse(raw));
+} catch (e) {}
+function persist(){ try { localStorage.setItem('longswim2', JSON.stringify(save)); } catch (e) {} }
+// migrate saves from when Extreme was called Fiendish
+if (save.diff === 'fiendish') save.diff = 'extreme';
+if (save.done && save.done.fiendish){ save.done.extreme = true; delete save.done.fiendish; }
+
+/* ============================== audio ============================== */
+let AC = null;
+function beep(freq, dur, type, vol){
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || .08, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  } catch (e) {}
+}
+const sfx = {
+  hit:  () => { beep(140, .3, 'sawtooth', .1); beep(90, .4, 'square', .06); },
+  food: () => beep(880, .15, 'sine', .07),
+  bag:  () => beep(180, .35, 'sawtooth', .09),
+  win:  () => { beep(523, .18, 'triangle', .08); setTimeout(() => beep(659, .18, 'triangle', .08), 140); setTimeout(() => beep(784, .3, 'triangle', .09), 280); },
+};
+
+/* ============================== species ============================== */
+const SPECIES = {
+  sawfish: {
+    name: 'Sawfish', speed: 240, hearts: 3, radius: 20, food: 'fish', foodWord: 'Fish',
+    desc: 'Its toothed saw snags in net mesh instantly — all five sawfish species are endangered, largely because of nets.',
+  },
+  hammerhead: {
+    name: 'Hammerhead', speed: 268, hearts: 3, radius: 19, food: 'fish', foodWord: 'Fish',
+    desc: 'Fastest here — but that wide head tangles badly in gillnets, a big reason hammerhead numbers have crashed.',
+  },
+  turtle: {
+    name: 'Sea Turtle', speed: 205, hearts: 3, radius: 21, food: 'jelly', foodWord: 'Jellies',
+    desc: 'Crosses whole oceans to reach its home beach. Loves jellyfish — but watch out, floating plastic bags look just like them.',
+  },
+};
+
+/* ============================== analytics & learn-more ============================== */
+const GA_ID = 'G-RVWPYEZ4Z4';
+if (GA_ID){
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ dataLayer.push(arguments); };
+  gtag('js', new Date()); gtag('config', GA_ID);
+}
+function track(ev, params){ try { if (window.gtag) gtag('event', ev, params || {}); } catch (e) {} }
+
+const LEARN = {
+  sawfish:    { url: 'https://www.marineconservation.org.au/sawfish/', label: 'Learn about sawfish', plural: 'sawfish',
+                org: 'Australian Marine Conservation Society', qr: 'amcs' },
+  hammerhead: { url: 'https://www.marineconservation.org.au/hammerhead-sharks/', label: 'Learn about hammerheads', plural: 'hammerhead sharks',
+                org: 'Australian Marine Conservation Society', qr: 'amcs' },
+  turtle:     { url: 'https://seaturtlefoundation.org/', label: 'Learn about sea turtles', plural: 'sea turtles',
+                org: 'Sea Turtle Foundation', qr: 'stf' },
+};
+const QR_STF = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAIAAADeJhTwAAADIElEQVR4nO2dy23dQAwA7SAlqIlUkppTSdyCgT2lghwjIFhgFySfhuuZk+HIK+UNSGq/7/3P58ebMPj29APIP5QBQhkglAFCGSCUAUIZIL7P/uH68TP9ZuP3r63rr9szrPzt7jNXtBm5r5EBQhkglNGhZkRy/UrOnf1+3O51/3kld8+u321npf1dVu5rZIBQBghldKsZd3Zzd0X7u3Vidn11n2b3czAyQCgDhDI614xXMgL1YKUfQ8PIAKEMEMoA8VjNiIw7zditExVzFRGMDBDKAKGMzjWj+j19JLW/0k7kXhWfg5EBQhkglNGtZlS8j6/MUQ/A72fPXIGRAUIZIJTRoWYQxv2vzRxdcf0rPwcjA4QyQCgDxPtsH/juOqIZWe/1I7C3I2s9bqT/sfL8RgYIZYBQxon9jFn+XcnFkXWuI6mWzNitJZHxKyMDhDJAKKNDP+NOZN1qpJ/xyj0cr6xbM4wMEMoAoYwTx6ayxnPGQ/k6qw8ReR4jA4QyQCijWz9jl6zzOa7AeSGza+5Uz6nstmNkgFAGCGWcXjNWiJwHNR46W3BGVl/KyAChDBDK6DY2dSdr70LFeNeMyN6LyPy25001xjQFQhmnn2tbMScxAm1mjTtF1uk6NtUM0xQIZXReN5V13nj1/EH12q1Z+3fsZzTGNAVCGV9pT99Km1nndoyHzvzIqpdGBghlgFBG5/mMCNX7qK+C9cEVe8WtGQ0wTYFQxlftZ+y2fxWsta3or7in70BMUyCUccr3Zzw15jOSxrVm7UT+X45NHYJpCoQyQCD2Zzy1D2MknR0ya3MXIwOEMkAoAwRuPmMUf5d4ZCyr+hwRIwOEMkAo4/T9GVl5fBTk7op9ec5nHIhpCoQyOs9nVLxfZ40LrbC7/26FrLVVRgYIZYBQxilz4BVcBf2GrL7OSvuR/pCRAUIZIJQBAlczstY1ZY1rZa2h8nv6mmGaAqGMzjWj+vuxR/H7/uxekeeJzKXfMTJAKAOEMrrVjIo1VK88k+pKOm+qei7dyAChDBDKAPHY/gz5HyMDhDJAKAOEMkAoA4QyQCjjjcNfG1cZcXWdegcAAAAASUVORK5CYII=';
+const QR_AMCS = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAIAAADeJhTwAAADJElEQVR4nO2dwY3dMAwFd4MtQU2kktScSjYtBNApFeQYAxsBFCjaI/2Zo78tG34g+Sma0vuf37/ehMG3px9A/qEYIBQDhGKAUAwQigFCMUB8jH5o338sv1n//Pnf8UfH77z2qfdwRcsAoRggFGOHmHEl4ltHRPx45HgL+O7q+FHxHq5oGSAUA4Ri7BYzMr571fg9EUsqcoWK96BlgFAMEIqxc8xYxeg/fp+MDRXzWpmYl0HLAKEYIBQDxGMx40rE1/dEnjEaM3L8TrQMEIoBQjF2jhkVvjWSK4yoqGNX1zZGaBkgFAOEYuwWMyrqAbO0yTmlzPHIM1SgZYBQDBCKsUPMuHOupqKW0BfFiTvfg5YBQjFAKAaI91EfeKaPIeOXW6LWHTl/VV0kct/R+PZnbIBuCoRi7BAzRlR/X9QWzSmtejZ7+l4U3RQIxTixnlE9/9MTdfJMTFoVn+zp2wzdFAjFOOW7qUjOUf1/vxfPm0WuzYx/RcsAoRggFGPn9aYix8l5xpXZGDC6NkLkfC0DhGKAUIxX6ulbVXNukzFs9AyZ/vNM3LIGvhm6KRCKcWLMyHwvVL32VLvxu6krszFGywChGCAU48R1bZ9aR7ZN5gGr4lBF/7mWAUIxQCjGKT19q3op7uzB7oEaRuR86xmHo5sCoRg79/St6pPIzBf1gpwgMk6EzDvRMkAoBgjFODHPqPbjV8i95ZmauZYBQjFAKMbOfeAjVtW6e3FdgRDbzDM2QDcFQjFO3A+8+lvVCBV7fWfeg3nGxuimQCjGiXnGLJlev1a8Jvmq3GX2fC0DhGKAUIwT84wIkZ7qVtxjsWrtkMh93Q98Y3RTIBTjxP6MEbP+tCfWMI+cc+eefbO5iJYBQjFAKMbOfeCr1o+a3QO8LcoJMn1/mftG0DJAKAYIxXil9aZGZOajWsH+rJnvaEfMXqtlgFAMEIoB4rGYUb0OR1u0psidNXktA4RigFCMU/bPWEVFz13F+NVjahkgFAOEYpy4T98ss3sZRajeAyrzfZQ18M3QTYFQDBCP9WfIV7QMEIoBQjFAKAYIxQChGCAU443DXw2VGE3Rwv7cAAAAAElFTkSuQmCC';
+
+function learnHTML(){
+  const l = LEARN[player.species];
+  return '<img src="' + (l.qr === 'stf' ? QR_STF : QR_AMCS) + '" alt="QR code linking to ' + l.org + '">' +
+    '<div class="txt">These dangers are real for ' + l.plural + '. See how the ' + l.org + ' protects them — scan the code, or tap below.' +
+    '<br><a class="btn ghost" href="' + l.url + '" target="_blank" rel="noopener" onclick="trackLearn()">' + l.label + '</a></div>';
+}
+window.trackLearn = function(){ track('learn_more_click', { species: player.species }); };
+
+/* ============================== facts ============================== */
+const FACTS = {
+  general: [
+    '<b>Ghost nets</b> are fishing nets lost or abandoned at sea. They drift for decades, catching animals the whole time.',
+    'Nearly <b>half of the plastic</b> in some ocean garbage patches is lost fishing gear — nets, lines and ropes.',
+    'Animals caught accidentally in fishing gear are called <b>bycatch</b>. Hundreds of thousands of sea creatures become bycatch every year.',
+    'Thin net mesh is almost <b>invisible underwater</b> — that is exactly why it is such a deadly trap for marine life.',
+    '<b>Circle hooks</b> and escape hatches called <b>turtle excluder devices</b> help fishers avoid catching the wrong species.',
+    '<b>Overfishing</b> doesn’t just empty nets of the future — it leaves whole food webs hungry, from sharks to seabirds.',
+  ],
+  sawfish: [
+    'A sawfish’s <b>toothed rostrum</b> (its saw) tangles in nets so easily that entanglement helped make all five sawfish species endangered.',
+    'Sawfish use their saw to <b>sense and slash</b> prey — brilliant for hunting, terrible around fishing nets.',
+  ],
+  hammerhead: [
+    'A hammerhead’s wide head is packed with <b>electro-sensors</b> for finding prey — but its shape makes nets extra dangerous for them.',
+    'Sharks must keep <b>swimming to breathe</b>. A shark held still in a net can suffocate.',
+  ],
+  turtle: [
+    'Sea turtles can hold their breath for hours at rest — but a turtle <b>trapped in a net</b> panics, uses oxygen fast, and can drown.',
+    'To a turtle, a drifting <b>plastic bag looks like a jellyfish</b> — their favourite food. Never let balloons or bags reach the sea.',
+    'Sea turtles return to nest on the <b>same beach where they hatched</b>, navigating whole oceans to get home.',
+  ],
+};
+function randomFact(){
+  const pool = FACTS.general.concat(FACTS[player.species] || []);
+  return '&#128161; <b>Did you know?</b> ' + pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* ============================== difficulties ============================== */
+const DIFF_ORDER = ['easy', 'medium', 'hard', 'extreme'];
+const DIFFS = {
+  easy: {
+    label: 'EASY', title: 'Sheltered Bay',
+    desc: 'Calm water, a few patient anglers and some small drifting nets. A gentle first swim.',
+    L: 4200, hooks: 4, nets: 5, rocks: 3, spires: 0, drifting: 0, bags: 2,
+    hookSpd: .8, netScale: .8, pan: 48, hungerDrain: 1.8,
+  },
+  medium: {
+    label: 'MEDIUM', title: 'The Fishing Grounds',
+    desc: 'Busier water. More lines, bigger nets, and rock fields to weave through.',
+    L: 5400, hooks: 6, nets: 7, rocks: 4, spires: 1, drifting: 0, bags: 3,
+    hookSpd: 1.15, netScale: 1, pan: 62, hungerDrain: 2,
+  },
+  hard: {
+    label: 'HARD', title: 'The Fleet',
+    desc: 'The whole harbour is out today. Some nets have broken loose and drift with the current.',
+    L: 6600, hooks: 9, nets: 9, rocks: 5, spires: 2, drifting: 2, bags: 3,
+    hookSpd: 1.5, netScale: 1.15, pan: 78, hungerDrain: 2.2,
+  },
+  extreme: {
+    label: 'EXTREME', title: 'The Gauntlet',
+    desc: 'Hooks stacked on hooks, walls of mesh, rock mazes, restless currents. Very few make it home.',
+    L: 8000, hooks: 12, nets: 12, rocks: 6, spires: 3, drifting: 4, bags: 4,
+    hookSpd: 1.9, netScale: 1.3, pan: 95, hungerDrain: 2.5,
+  },
+};
+
+function rand(a, b){ return a + Math.random() * (b - a); }
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* ============================== level build ============================== */
+function buildLevel(diffKey){
+  const D = DIFFS[diffKey];
+  const L = D.L;
+  const hazards = [], rocks = [], food = [], decos = [];
+
+  // slot the static obstacles so every one is individually passable
+  const kinds = [];
+  for (let i = 0; i < D.hooks; i++) kinds.push('hook');
+  for (let i = 0; i < D.nets;  i++) kinds.push('net');
+  for (let i = 0; i < D.rocks; i++) kinds.push('rock');
+  for (let i = 0; i < D.spires; i++) kinds.push('spire');
+  for (let i = kinds.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1)); const t = kinds[i]; kinds[i] = kinds[j]; kinds[j] = t;
+  }
+  const x0 = 650, x1 = L - 550, gap = (x1 - x0) / Math.max(1, kinds.length - 1);
+  kinds.forEach((k, i) => {
+    const x = x0 + gap * i + rand(-gap * .16, gap * .16);
+    if (k === 'net' && x > L - 1100) k = pick(['hook', 'rock']); // home stretch: the island is in sight, no nets
+    if (k === 'hook'){
+      hazards.push({ type: 'hook', x, phase: rand(0, 6.28),
+        speed: D.hookSpd + rand(0, .35),
+        minLen: 60 + rand(0, 60),
+        maxLen: Math.min(390, 190 + D.hookSpd * 90 + rand(0, 60)) });
+    } else if (k === 'net'){
+      hazards.push(makeNet(x, D, false));
+    } else if (k === 'spire'){
+      // rock column rising from the seabed — swim over or around
+      const top = rand(SURF + 150, SURF + 240);
+      let y = FLOOR - 36, r = rand(46, 58);
+      while (y > top){ rocks.push({ x: x + rand(-8, 8), y, r }); y -= r * 1.2; r = Math.max(24, r * .85); }
+    } else {
+      // boulder cluster settled into the sand
+      const cn = 2 + Math.floor(rand(0, 3));
+      for (let c = 0; c < cn; c++){
+        const r = rand(28, 58);
+        rocks.push({ x: x + (c - (cn - 1) / 2) * rand(30, 46), y: FLOOR - 28 - r * rand(.15, .55), r });
+      }
+    }
+  });
+
+  // free-drifting ghost nets (hard/extreme) — they ride the current leftward
+  for (let i = 0; i < D.drifting; i++){
+    const n = makeNet(rand(L * .3, L - 1200), D, true);
+    n.vx = -rand(24, 46);
+    hazards.push(n);
+  }
+
+  // a welcoming party of the player's own kind, waiting in the lagoon
+  const npcs = [];
+  for (let i = 0; i < 3; i++){
+    npcs.push({ x0: L + 175 + i * 55 + rand(-12, 12), y0: rand(SURF + 45, 205),
+      ph: rand(0, 6.28), s: rand(.55, .85) });
+  }
+
+  // hazy rock formations in the distance (no collision — the player swims in front)
+  const bgRocks = [];
+  for (let i = 0; i < Math.round(L / 650); i++){
+    const w = rand(80, 170), h = rand(110, 300);
+    bgRocks.push({ x: rand(300, L * 1.05), w, h, pts: rockPts(1) });
+  }
+
+  // food: fish for sharks, jellyfish for turtles (+ deceptive plastic bags)
+  const isTurtle = player.species === 'turtle';
+  const foodN = 8 + Math.round(L / 900);   // hunger needs feeding — more food on longer swims
+  for (let i = 0; i < foodN; i++){
+    food.push({ kind: isTurtle ? 'jelly' : 'fish', x: rand(420, L - 420),
+      y: rand(SURF + 70, FLOOR - 80), got: false, bob: rand(0, 6.28), flip: Math.random() < .5 ? -1 : 1,
+      c: pick(REEF_FISH) });
+  }
+  if (isTurtle){
+    for (let i = 0; i < D.bags; i++){
+      food.push({ kind: 'bag', x: rand(500, L - 500),
+        y: rand(SURF + 60, FLOOR - 120), got: false, bob: rand(0, 6.28), flip: 1 });
+    }
+  }
+
+  // blocky facets + reef corals growing off the rocks
+  const corals = [];
+  for (const r of rocks){
+    r.pts = rockPts(r.r);
+    const cn = Math.random() < .8 ? 1 + Math.floor(rand(0, 2.4)) : 0;
+    for (let i = 0; i < cn; i++){
+      corals.push({ rx: r.x, ry: r.y, r: r.r, a: rand(-2.8, -.35),
+        type: pick(['branch', 'branch', 'fan', 'brain', 'tube']),
+        color: pick(CORAL_COLORS), size: rand(.75, 1.35), seed: rand(0, 6.28) });
+    }
+  }
+
+  // seabed decorations (never collide)
+  for (let x = 200; x < L - 480; x += rand(90, 190)){
+    decos.push({ x, kind: pick(['grass','grass','coralfan','star','anemone']), seed: rand(0, 6.28),
+      size: rand(.7, 1.3), color: pick(CORAL_COLORS) });
+  }
+
+  return { diff: diffKey, L, hazards, rocks, corals, bgRocks, npcs, food, decos, autoX: 0, name: D.title, desc: D.desc };
+}
+
+// forward net colliders for species whose leading feature outreaches the body
+const NET_REACH = {
+  sawfish:    { a: 24, b: 60, half: 9,  clear: 64 },
+  hammerhead: { a: 20, b: 40, half: 16, clear: 44 },
+};
+
+const CORAL_COLORS = ['#ff7a59', '#e8639b', '#b96ad9', '#ffb054', '#ff5c7a', '#5fd0b5'];
+// reef fish liveries: [body, stripe/tail accent]
+const REEF_FISH = [
+  ['#ffd24d', '#1c2e3d'], ['#ff8a3d', '#f2e9d8'], ['#63b3ff', '#123049'],
+  ['#c86bff', '#f2e9d8'], ['#7fd8a5', '#123049'], ['#ff5c7a', '#f2e9d8'],
+];
+
+function rockPts(r){
+  // angular boulder outline: 6-8 uneven facets
+  const n = 6 + Math.floor(rand(0, 3)), pts = [];
+  for (let i = 0; i < n; i++){
+    const a = (i / n) * 6.283 + rand(-.18, .18);
+    const rad = r * rand(.8, 1.08);
+    pts.push({ x: Math.cos(a) * rad, y: Math.sin(a) * rad });
+  }
+  return pts;
+}
+
+function makeNet(x, D, drifting){
+  // free-floating nets of varying shapes: buoyed at the surface, snagged on the
+  // seabed, or held mid-water by floats — never attached to a boat
+  const s = D.netScale;
+  const mode = drifting ? 'mid' : pick(['surface', 'floor', 'mid']);
+  let y0, y1;
+  if (mode === 'surface'){ y0 = SURF - 4; y1 = y0 + rand(140, 300) * s; }
+  else if (mode === 'floor'){ y1 = FLOOR; y0 = y1 - rand(130, 280) * s; }
+  else { const h = rand(90, 190) * s; y0 = rand(SURF + 60, FLOOR - 80 - h); y1 = y0 + h; }
+  y1 = Math.min(y1, FLOOR); y0 = Math.max(y0, SURF - 4);
+  // keep a swimmable gap of at least ~110px somewhere in the column
+  if (y0 - SURF < 110 && FLOOR - y1 < 110){
+    if (mode === 'floor') y0 = FLOOR - (FLOOR - SURF - 120);
+    else y1 = SURF + (FLOOR - SURF - 120);
+  }
+  // the catch the boat actually wanted — everything else in this net is bycatch
+  const caught = [];
+  const catchN = 2 + (Math.random() < .5 ? 1 : 0);
+  for (let i = 0; i < catchN; i++){
+    caught.push({ ox: rand(-.32, .32), oy: rand(.15, .85),
+      rot: rand(.6, 2.4) * (Math.random() < .5 ? -1 : 1), c: pick(REEF_FISH) });
+  }
+  return { type: 'net', mode, x, w: rand(55, 150) * s, y0, y1, vx: 0, sway: rand(0, 6.28), caught };
+}
+
+/* ============================== state ============================== */
+let state = 'menu';   // menu | intro | play | paused | done | over
+let level = null, camX = 0, camY = 0, time = 0, levelTime = 0, shake = 0;
+const keys = {};
+let toastTimer = null, bagToastShown = false;
+
+const player = {
+  x: 100, y: 300, vx: 0, vy: 0, species: 'turtle',
+  hearts: 3, radius: 21, invuln: 0, stun: 0, hunger: 100,
+  food: 0, dir: 1, wobble: 0, dead: false,
+};
+let particles = [], ambient = [];
+
+(function initAmbient(){
+  const n = reduceMotion ? 6 : 18;
+  for (let i = 0; i < n; i++){
+    ambient.push({ x: rand(0, CW), y: rand(SURF + 40, CH - 40), s: rand(.3, 1),
+      vx: rand(-14, -30), fish: Math.random() < .5, ph: rand(0, 6.28) });
+  }
+})();
+
+function startLevel(diffKey){
+  save.diff = diffKey; persist();
+  const sp = SPECIES[player.species];
+  level = buildLevel(diffKey);
+  player.x = 100; player.y = (SURF + FLOOR) / 2;
+  player.vx = 0; player.vy = 0;
+  player.hearts = sp.hearts; player.radius = sp.radius;
+  player.invuln = 0; player.stun = 0; player.hunger = 100;
+  player.food = 0; player.dir = 1; player.dead = false;
+  camX = 0; camY = 0; levelTime = 0; bagToastShown = false;
+  $('lvlLabel').textContent = DIFFS[diffKey].label;
+  $('introName').textContent = DIFFS[diffKey].label;
+  $('introTitle').textContent = level.name;
+  $('introDesc').textContent = level.desc;
+  $('introFact').innerHTML = randomFact();
+  updateHud();
+  show('intro');
+  state = 'intro';
+}
+
+function beginPlay(){
+  hideOverlays();
+  $('hud').classList.add('on');
+  state = 'play';
+  track('level_start', { difficulty: level.diff, species: player.species });
+}
+
+/* ============================== hud ============================== */
+function updateHud(){
+  const sp = SPECIES[player.species];
+  $('hearts').innerHTML = '&#10084;'.repeat(Math.max(0, player.hearts)) +
+    '<span style="opacity:.25">' + '&#10084;'.repeat(sp.hearts - Math.max(0, player.hearts)) + '</span>';
+  $('foodLabel').textContent = sp.foodWord + ' ' + player.food;
+}
+function updateHudBars(){
+  if (!level) return;
+  const p = Math.min(1, Math.max(0, player.x / (level.L + 180)));
+  $('progBar').style.width = (p * 100).toFixed(1) + '%';
+  const h = Math.max(0, player.hunger);
+  $('hungerBar').style.width = h.toFixed(0) + '%';
+  $('hungerBar').style.background = h > 50 ? '#7fd8a5' : h > 25 ? '#ffb054' : '#ff5c5c';
+}
+function toast(html, ms){
+  $('toast').innerHTML = html;
+  $('toast').classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').classList.remove('on'), ms || 4500);
+}
+
+/* ============================== input ============================== */
+addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+  if ((e.key === 'p' || e.key === 'P') && (state === 'play' || state === 'paused')){
+    if (state === 'play'){ state = 'paused'; show('paused'); }
+    else { state = 'play'; hideOverlays(); }
+  }
+  if (e.key === 'Enter'){
+    if ($('intro').classList.contains('on')) beginPlay();
+    else if ($('complete').classList.contains('on')) $('replayBtn').click();
+    else if ($('gameover').classList.contains('on')) $('retryBtn').click();
+  }
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+/* virtual joystick — appears wherever a finger (or pointer) lands on the water */
+const joy = { active: false, id: -1, cx: 0, cy: 0, x: 0, y: 0 };
+const joyEl = $('joy'), knobEl = $('joyKnob');
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  joy.active = true; joy.id = e.pointerId;
+  joy.cx = e.clientX; joy.cy = e.clientY; joy.x = 0; joy.y = 0;
+  joyEl.style.left = e.clientX + 'px'; joyEl.style.top = e.clientY + 'px';
+  joyEl.style.display = 'block';
+  knobEl.style.transform = 'translate(-50%,-50%)';
+});
+canvas.addEventListener('pointermove', e => {
+  if (!joy.active || e.pointerId !== joy.id) return;
+  const dx = e.clientX - joy.cx, dy = e.clientY - joy.cy;
+  const d = Math.hypot(dx, dy), max = 42;
+  const m = Math.min(1, d / max);
+  joy.x = d > 4 ? dx / d * m : 0;
+  joy.y = d > 4 ? dy / d * m : 0;
+  const kd = Math.min(d, max), kx = d > 0 ? dx / d * kd : 0, ky = d > 0 ? dy / d * kd : 0;
+  knobEl.style.transform = 'translate(calc(-50% + ' + kx.toFixed(1) + 'px), calc(-50% + ' + ky.toFixed(1) + 'px))';
+});
+function joyEnd(e){
+  if (e.pointerId !== joy.id) return;
+  joy.active = false; joy.x = 0; joy.y = 0;
+  joyEl.style.display = 'none';
+}
+canvas.addEventListener('pointerup', joyEnd);
+canvas.addEventListener('pointercancel', joyEnd);
+// long-press callouts and context menus have no business in a game
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+/* full screen (webkit prefix for iPadOS Safari) */
+const docEl = document.documentElement;
+const fsSupported = !!(docEl.requestFullscreen || docEl.webkitRequestFullscreen);
+function toggleFullscreen(){
+  try {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (docEl.requestFullscreen || docEl.webkitRequestFullscreen).call(docEl);
+  } catch (e) {}
+}
+if (fsSupported){
+  $('fsBtn').addEventListener('click', toggleFullscreen);
+  $('menuFsBtn').addEventListener('click', toggleFullscreen);
+} else {
+  $('fsBtn').parentElement.style.display = 'none';
+  $('menuFsBtn').style.display = 'none';
+}
+
+/* ============================== damage ============================== */
+function hurt(pushX, pushY, why){
+  if (player.invuln > 0 || player.dead) return;
+  player.hearts--; updateHud();
+  player.invuln = 1.7;
+  player.stun = .45;                    // a tangled moment before wriggling free
+  player.vx = pushX; player.vy = pushY;
+  shake = reduceMotion ? 0 : .35;
+  sfx.hit();
+  burst(player.x, player.y, '#ff7a59', 14);
+  if (player.hearts <= 0){
+    player.dead = true;
+    setTimeout(() => {
+      $('goSub').textContent = why === 'net'
+        ? 'Tangled in the mesh — just like too many real ' + SPECIES[player.species].name.toLowerCase() + 's.'
+        : why === 'bag'
+        ? 'A bellyful of plastic. For real sea turtles, bags are one of the ocean’s quietest dangers.'
+        : why === 'hunger'
+        ? 'Too hungry to swim on. In an overfished sea, finding a meal is a struggle for everyone.'
+        : pick([
+            'The fleet got you this time. The reef still waits.',
+            'That hook had your name on it. Next run it won’t.',
+          ]);
+      $('goFact').innerHTML = randomFact();
+      $('learnOver').innerHTML = learnHTML();
+      show('gameover'); state = 'over';
+      $('hud').classList.remove('on');
+      track('game_over', { difficulty: level.diff, species: player.species, cause: why || 'hook' });
+    }, 700);
+  }
+}
+
+function burst(x, y, color, n){
+  if (reduceMotion) n = Math.min(n, 5);
+  for (let i = 0; i < n; i++){
+    particles.push({ x, y, vx: rand(-120, 120), vy: rand(-120, 120),
+      life: rand(.3, .8), t: 0, color, r: rand(2, 5) });
+  }
+}
+
+/* ============================== update ============================== */
+function update(dt){
+  time += dt;
+  for (const a of ambient){
+    a.x += a.vx * a.s * dt;
+    if (a.x < -60){ a.x = CW + 60; a.y = rand(SURF + 40, CH - 40); }
+  }
+  for (const p of particles){ p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 60 * dt; }
+  particles = particles.filter(p => p.t < p.life);
+  if (shake > 0) shake = Math.max(0, shake - dt);
+
+  if ((state !== 'play' && !(state === 'over' && player.dead)) || !level) return;
+  if (state === 'play') levelTime += dt;
+
+  const sp = SPECIES[player.species];
+  player.invuln = Math.max(0, player.invuln - dt);
+  player.stun = Math.max(0, player.stun - dt);
+  updateHudBars();
+  if (player.dead){
+    player.vx *= .95;
+    player.y = Math.min(player.y + 50 * dt, floorY(player.x) - 14);
+    player.x += player.vx * dt;
+    return;
+  }
+
+  // input -> velocity (locked briefly while tangled)
+  let ix = 0, iy = 0;
+  if (player.stun <= 0){
+    if (keys['arrowleft'] || keys['a']) ix -= 1;
+    if (keys['arrowright'] || keys['d']) ix += 1;
+    if (keys['arrowup'] || keys['w']) iy -= 1;
+    if (keys['arrowdown'] || keys['s']) iy += 1;
+    if (joy.active && (joy.x || joy.y)){ ix = joy.x; iy = joy.y; }
+  }
+  // hunger ticks down; an empty belly costs a heart
+  player.hunger -= DIFFS[level.diff].hungerDrain * dt;
+  if (player.hunger <= 0){
+    player.hunger = 55;
+    hurt(-60, 0, 'hunger');
+  }
+
+  const mag = Math.max(1, Math.hypot(ix, iy));   // keeps the joystick's analog speed, normalises diagonals
+  const tx = (ix / mag) * sp.speed, ty = (iy / mag) * sp.speed * .85;
+  player.vx += (tx - player.vx) * Math.min(1, dt * 6);
+  player.vy += (ty - player.vy) * Math.min(1, dt * 6);
+  if (Math.abs(ix) > .1) player.dir = ix > 0 ? 1 : -1;
+
+  player.x += player.vx * dt;
+  player.y += player.vy * dt + Math.sin(time * 2) * 6 * dt;
+  player.wobble = Math.hypot(player.vx, player.vy) / sp.speed;
+
+  // solid rocks: push the swimmer out, no damage
+  for (const r of level.rocks){
+    const dx = player.x - r.x, dy = player.y - r.y;
+    const d = Math.hypot(dx, dy), min = r.r + player.radius * .85;
+    if (d < min && d > .001){
+      const nx = dx / d, ny = dy / d;
+      player.x = r.x + nx * min; player.y = r.y + ny * min;
+      const dot = player.vx * nx + player.vy * ny;
+      if (dot < 0){ player.vx -= dot * nx; player.vy -= dot * ny; }
+    }
+  }
+
+  // the current: the view creeps ever east, and the screen edge drags you with it
+  const camCap = level.L + 780 - CW;
+  level.autoX = Math.min(level.autoX + DIFFS[level.diff].pan * dt, camCap);
+
+  // bounds + beach floor
+  const fy = floorY(player.x);
+  player.x = Math.max(camX + 12 + player.radius, Math.min(level.L + 260, player.x));
+  player.y = Math.max(SURF + 22, Math.min(fy - player.radius - 2, player.y));
+
+  // camera
+  const target = Math.max(level.autoX, Math.min(player.x - 330, camCap));
+  camX += (target - camX) * Math.min(1, dt * 5);
+  // finale: the view climbs smoothly with the sand bank until the waterline sits mid-screen
+  const ts = Math.max(0, Math.min(1, (player.x - (level.L - 420)) / 460));
+  const targetY = -170 * ts * ts * (3 - 2 * ts);
+  camY += (targetY - camY) * Math.min(1, dt * 3);
+
+  // hazards
+  for (const h of level.hazards){
+    if (h.type === 'hook'){
+      const len = h.minLen + (Math.sin(time * h.speed + h.phase) * .5 + .5) * (h.maxLen - h.minLen);
+      h.hy = SURF - 6 + len;
+      const d = Math.hypot(player.x - h.x, player.y - h.hy);
+      if (d < player.radius + 13) hurt(-190, player.y > h.hy ? 160 : -60, 'hook');
+    } else { // net
+      if (h.gone) continue;
+      if (h.vx){
+        h.x += h.vx * dt;
+        if (h.x < camX - 260){
+          const nx = camX + CW + rand(200, 700);
+          if (nx > level.L - 1100){ h.gone = true; h.x = -9999; continue; } // island in sight: nets retire
+          h.x = nx;
+        }
+      }
+      const hw = h.w / 2;
+      let hit = player.x + player.radius * .7 > h.x - hw && player.x - player.radius * .7 < h.x + hw &&
+                player.y + player.radius * .7 > h.y0 && player.y - player.radius * .7 < h.y1;
+      const reach = NET_REACH[player.species];
+      if (!hit && reach){
+        // what leads the body — the sawfish's saw, the hammerhead's wide head — snags first
+        const s1 = player.x + (player.dir > 0 ? reach.a : -reach.b);
+        const s2 = player.x + (player.dir > 0 ? reach.b : -reach.a);
+        hit = s2 > h.x - hw && s1 < h.x + hw && player.y + reach.half > h.y0 && player.y - reach.half < h.y1;
+      }
+      if (hit && player.invuln <= 0){
+        hurt(-230, h.mode === 'floor' ? -140 : 120, 'net');
+        player.x = h.x - hw - (reach && player.dir > 0 ? reach.clear : player.radius) - 4; // wriggle free, shoved back
+      }
+    }
+  }
+
+  // food & plastic bags
+  for (const f of level.food){
+    if (f.got) continue;
+    const fy2 = f.y + Math.sin(time * 2 + f.bob) * 6;
+    if (Math.hypot(player.x - f.x, player.y - fy2) < player.radius + 13){
+      f.got = true;
+      if (f.kind === 'bag'){
+        sfx.bag();
+        burst(f.x, fy2, '#cfd8dd', 10);
+        hurt(-120, -60, 'bag');
+        if (!bagToastShown){
+          bagToastShown = true;
+          toast('&#129443; That was a <b>plastic bag</b>, not a jellyfish! Real sea turtles make the same mistake — one more reason to keep plastic out of the ocean.', 6000);
+        }
+      } else {
+        player.food++; player.hunger = Math.min(100, player.hunger + 32);
+        updateHud(); sfx.food();
+        burst(f.x, fy2, '#f2e9d8', 8);
+      }
+    }
+  }
+
+  // home: gliding into the lagoon
+  if (player.x > level.L + 180 && state === 'play'){
+    state = 'done';
+    $('hud').classList.remove('on');
+    sfx.win();
+    save.done[level.diff] = true; persist();
+    buildDiffRow();
+    const idx = DIFF_ORDER.indexOf(level.diff);
+    const next = DIFF_ORDER[idx + 1];
+    $('completeTitle').textContent = 'Home!';
+    $('completeSub').textContent = 'You crossed ' + level.name + ' and reached the island.';
+    $('stHearts').textContent = player.hearts;
+    $('stFood').textContent = player.food;
+    $('stFoodLabel').textContent = (player.species === 'turtle' ? 'jellies' : 'fish') + ' eaten';
+    const m = Math.floor(levelTime / 60), s = Math.floor(levelTime % 60);
+    $('stTime').textContent = m + ':' + String(s).padStart(2, '0');
+    $('learnComplete').innerHTML = learnHTML();
+    track('level_complete', { difficulty: level.diff, species: player.species,
+      seconds: Math.round(levelTime), hearts_left: player.hearts });
+    if (next){
+      $('nextDiffBtn').style.display = '';
+      $('nextDiffBtn').textContent = 'Next: ' + DIFFS[next].label;
+      $('nextDiffBtn').onclick = () => { setDiff(next); startLevel(next); };
+    } else {
+      $('nextDiffBtn').style.display = 'none';
+    }
+    show('complete');
+  }
+}
+
+function floorY(x){
+  if (!level) return FLOOR - 26;
+  const start = level.L - 420, L = level.L;
+  if (x <= start) return FLOOR - 26;
+  if (x <= L - 40){
+    // the long climb up the reef slope, eased at both ends
+    const t = (x - start) / 380, s = t * t * (3 - 2 * t);
+    return (FLOOR - 26) - s * ((FLOOR - 26) - 210);
+  }
+  if (x <= L + 60){
+    // a little underwater sand bank guards the lagoon entrance (raised cosine: no kinks)
+    const c = Math.max(0, Math.cos(Math.PI * (x - (L + 10)) / 100));
+    return 210 - 40 * c * c;
+  }
+  if (x <= L + 120){
+    // slip down the bank's inner face
+    const t = (x - (L + 60)) / 60, s = t * t * (3 - 2 * t);
+    return 210 + s * 25;
+  }
+  if (x <= L + 330) return 235;   // the lagoon — deeper, calm water. Home.
+  // beyond the lagoon the beach rises gently out of the water
+  const u = Math.min(1, (x - (L + 330)) / 260);
+  return Math.max(SURF - 40, 235 - u * u * 225);
+}
+
+/* ============================== drawing ============================== */
+function draw(){
+  ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
+  const shx = shake > 0 ? rand(-6, 6) * shake : 0;
+  const shy = shake > 0 ? rand(-4, 4) * shake : 0;
+
+  // the waterline sits lower on screen as the finale pans up
+  const surfY = SURF - camY;
+
+  // water gradient
+  const g = ctx.createLinearGradient(0, surfY - 60, 0, CH);
+  g.addColorStop(0, '#8ed4ec'); g.addColorStop(.13, '#4fa3c7');
+  g.addColorStop(.45, '#14547a'); g.addColorStop(1, '#071d30');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+
+  // sky band above surface
+  const sky = ctx.createLinearGradient(0, 0, 0, surfY);
+  sky.addColorStop(0, '#ffd9a0'); sky.addColorStop(1, '#ffb37e');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, CW, surfY);
+  ctx.fillStyle = '#fff3d6';
+  ctx.beginPath(); ctx.arc(CW - 140, 34 + (surfY - SURF) * .18, 26, 0, 7); ctx.fill();
+
+  ctx.save();
+  ctx.translate(shx, shy);
+
+  // light rays
+  if (!reduceMotion){
+    ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = '#cfeefb';
+    for (let i = 0; i < 5; i++){
+      const rx = ((i * 260 - camX * .3) % (CW + 400) + CW + 400) % (CW + 400) - 200;
+      ctx.beginPath();
+      ctx.moveTo(rx, surfY); ctx.lineTo(rx + 70, surfY);
+      ctx.lineTo(rx + 190 + Math.sin(time + i) * 20, CH); ctx.lineTo(rx + 40, CH);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // surface line
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let x = 0; x <= CW; x += 12)
+    ctx.lineTo(x, surfY + Math.sin((x + camX) * .04 + time * 2.4) * 2.5);
+  ctx.stroke();
+
+  // ambient far fish / bubbles
+  for (const a of ambient){
+    ctx.globalAlpha = .25 * a.s + .1;
+    const ay = a.y - camY * .9;
+    if (a.fish){
+      ctx.fillStyle = '#0b3a58';
+      const fy2 = ay + Math.sin(time * 2 + a.ph) * 4;
+      ctx.beginPath();
+      ctx.ellipse(a.x, fy2, 14 * a.s, 5 * a.s, 0, 0, 7); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(a.x + 12 * a.s, fy2); ctx.lineTo(a.x + 20 * a.s, fy2 - 6 * a.s);
+      ctx.lineTo(a.x + 20 * a.s, fy2 + 6 * a.s); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle = '#bfe6f5';
+      ctx.beginPath(); ctx.arc(a.x, ay + Math.sin(time + a.ph) * 8, 3 * a.s, 0, 7); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  if (level){ drawBgRocks(); drawWorld(); }
+  drawParticles();
+  ctx.restore();
+
+  // vignette
+  const v = ctx.createRadialGradient(CW / 2, CH / 2, CH * .55, CW / 2, CH / 2, CH * .95);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,10,20,.35)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, CW, CH);
+}
+
+function drawBgRocks(){
+  // distant formations, seen hazily through the water; drawn behind everything
+  ctx.save();
+  ctx.globalAlpha = .45;
+  ctx.fillStyle = '#1c4560';
+  for (const b of level.bgRocks){
+    const sx = b.x - camX * .55;
+    if (sx + b.w < -60 || sx - b.w > CW + 60) continue;
+    const cy = CH - b.h / 2 + 14 - camY * .75;
+    ctx.beginPath();
+    b.pts.forEach((p, i) => {
+      const px2 = sx + p.x * b.w / 2, py2 = cy + p.y * b.h / 2;
+      i === 0 ? ctx.moveTo(px2, py2) : ctx.lineTo(px2, py2);
+    });
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawWorld(){
+  ctx.save();
+  ctx.translate(-camX, -camY);
+
+  drawSeabed();
+  drawRocks();
+  for (const f of level.food) drawFood(f);
+  for (const h of level.hazards){
+    if (h.type === 'hook') drawHook(h);
+    else drawNet(h);
+  }
+  drawIsland();
+  drawNPCs();
+  drawPlayer();
+  ctx.restore();
+}
+
+function drawNPCs(){
+  for (const n of level.npcs){
+    const x = n.x0 + Math.sin(time * .5 + n.ph) * 30;
+    const y = n.y0 + Math.sin(time * 1.3 + n.ph) * 8;
+    const dir = Math.cos(time * .5 + n.ph) >= 0 ? 1 : -1;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(dir * n.s, n.s);
+    drawSpecies(ctx, player.species, time + n.ph, .25);
+    ctx.restore();
+  }
+}
+
+function sandTop(x){
+  const start = level.L - 420;
+  return x > start ? floorY(x) - 6 + Math.sin(x * .03) * 3
+                   : FLOOR - 30 + Math.sin(x * .05) * 4;
+}
+
+function drawSeabed(){
+  const lo = camX - 40, hi = camX + CW + 40;
+  const start = level.L - 420;
+  const snap = v => Math.floor(v / 16) * 16;   // shared sample grid keeps the fills seam-free
+  // one continuous sand floor, dimmer with depth
+  const g2 = ctx.createLinearGradient(0, FLOOR - 40, 0, CH);
+  g2.addColorStop(0, '#d9ba7e'); g2.addColorStop(1, '#a8875a');
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.moveTo(snap(lo), CH + 5);
+  for (let x = snap(lo); x <= hi; x += 16) ctx.lineTo(x, sandTop(x));
+  ctx.lineTo(hi, CH + 5); ctx.closePath(); ctx.fill();
+  // brighter sand where the island rises
+  if (hi > start){
+    const s0 = snap(Math.max(lo, start));
+    ctx.fillStyle = '#e8c98a';
+    ctx.beginPath(); ctx.moveTo(s0, CH + 5);
+    for (let x = s0; x <= hi; x += 16) ctx.lineTo(x, sandTop(x));
+    ctx.lineTo(hi, CH + 5); ctx.closePath(); ctx.fill();
+  }
+  // ripple marks in the flat sand
+  ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 2;
+  for (let x = snap(lo); x < Math.min(hi, start); x += 64){
+    const sy = sandTop(x) + 11;
+    ctx.beginPath(); ctx.moveTo(x + 8, sy); ctx.quadraticCurveTo(x + 24, sy - 4, x + 40, sy); ctx.stroke();
+  }
+  // decorations
+  for (const d of level.decos){
+    if (d.x < lo || d.x > hi) continue;
+    drawDeco(d);
+  }
+}
+
+function drawDeco(d){
+  const s = d.size, sw = Math.sin(time * 1.5 + d.seed);
+  const G = sandTop(d.x) + 4;   // rooted in the sand floor
+  if (d.kind === 'grass'){
+    ctx.strokeStyle = '#2e8b6a'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (let i = -1; i <= 1; i++){
+      const h = (30 + 18 * Math.abs(Math.sin(d.seed + i))) * s;
+      ctx.beginPath(); ctx.moveTo(d.x + i * 7, G);
+      ctx.quadraticCurveTo(d.x + i * 7 + sw * 8, G - h * .6, d.x + i * 7 + sw * 13, G - h);
+      ctx.stroke();
+    }
+  } else if (d.kind === 'coralfan'){
+    ctx.strokeStyle = d.color || '#c2557e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    for (let i = 0; i < 5; i++){
+      const a = -Math.PI / 2 + (i - 2) * .3 + sw * .04;
+      ctx.beginPath(); ctx.moveTo(d.x, G - 2);
+      ctx.lineTo(d.x + Math.cos(a) * 34 * s, G - 2 + Math.sin(a) * 34 * s);
+      ctx.stroke();
+    }
+  } else if (d.kind === 'star'){
+    ctx.fillStyle = '#ffb054';
+    ctx.save(); ctx.translate(d.x, G - 5); ctx.rotate(d.seed);
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++){
+      const rr = (i % 2 === 0 ? 10 : 4.5) * s;
+      const a = i * Math.PI / 5;
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr * .6);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  } else { // anemone
+    ctx.strokeStyle = '#7fd8a5'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++){
+      const a = -Math.PI / 2 + (i - 2.5) * .35 + sw * .1;
+      ctx.beginPath(); ctx.moveTo(d.x, G);
+      ctx.quadraticCurveTo(d.x + Math.cos(a) * 10, G - 12 * s, d.x + Math.cos(a) * 16 * s, G - 20 * s);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawRocks(){
+  for (const r of level.rocks){
+    const g2 = ctx.createLinearGradient(r.x - r.r, r.y - r.r, r.x + r.r * .4, r.y + r.r);
+    g2.addColorStop(0, '#4c6b83'); g2.addColorStop(1, '#233c4b');
+    ctx.fillStyle = g2;
+    ctx.beginPath();
+    r.pts.forEach((p, i) => i === 0 ? ctx.moveTo(r.x + p.x, r.y + p.y) : ctx.lineTo(r.x + p.x, r.y + p.y));
+    ctx.closePath(); ctx.fill();
+    // sunlit top facet
+    ctx.fillStyle = 'rgba(207,238,251,.14)';
+    ctx.beginPath();
+    let started = false;
+    for (const p of r.pts){
+      if (p.y < 0){
+        if (!started){ ctx.moveTo(r.x + p.x, r.y + p.y); started = true; }
+        else ctx.lineTo(r.x + p.x, r.y + p.y);
+      }
+    }
+    if (started){ ctx.lineTo(r.x, r.y); ctx.closePath(); ctx.fill(); }
+    // barnacle speckles
+    ctx.fillStyle = 'rgba(242,233,216,.16)';
+    ctx.beginPath(); ctx.arc(r.x - r.r * .3, r.y - r.r * .1, r.r * .11, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(r.x + r.r * .25, r.y + r.r * .3, r.r * .08, 0, 7); ctx.fill();
+  }
+  drawCorals();
+}
+
+function drawCorals(){
+  for (const c of level.corals){
+    const bx = c.rx + Math.cos(c.a) * (c.r - 3), by = c.ry + Math.sin(c.a) * (c.r - 3);
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(c.a + Math.PI / 2 + Math.sin(time * 1.3 + c.seed) * .05); // grow out along the rock's surface normal
+    const s = c.size;
+    ctx.strokeStyle = c.color; ctx.fillStyle = c.color; ctx.lineCap = 'round';
+    if (c.type === 'branch'){
+      // staghorn: a trunk that forks twice
+      ctx.lineWidth = 5 * s;
+      ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(0, -13 * s); ctx.stroke();
+      ctx.lineWidth = 3.5 * s;
+      ctx.beginPath(); ctx.moveTo(0, -8 * s); ctx.lineTo(-8 * s, -20 * s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -13 * s); ctx.lineTo(7 * s, -24 * s); ctx.stroke();
+      ctx.lineWidth = 2.4 * s;
+      ctx.beginPath(); ctx.moveTo(-8 * s, -20 * s); ctx.lineTo(-13 * s, -28 * s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-8 * s, -20 * s); ctx.lineTo(-3 * s, -28 * s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(7 * s, -24 * s); ctx.lineTo(12 * s, -31 * s); ctx.stroke();
+      // pale polyp tips
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      for (const [tx2, ty2] of [[-13, -28], [-3, -28], [12, -31]]){
+        ctx.beginPath(); ctx.arc(tx2 * s, ty2 * s, 1.6 * s, 0, 7); ctx.fill();
+      }
+    } else if (c.type === 'fan'){
+      // sea fan: ribs joined by a webbed arc
+      ctx.lineWidth = 2 * s;
+      for (let i = 0; i < 5; i++){
+        const a = -Math.PI / 2 + (i - 2) * .38;
+        ctx.beginPath(); ctx.moveTo(0, 2);
+        ctx.quadraticCurveTo(Math.cos(a) * 10 * s, Math.sin(a) * 10 * s,
+                             Math.cos(a) * 20 * s, Math.sin(a) * 20 * s);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = .45; ctx.lineWidth = 1.2 * s;
+      for (const rr of [9, 14, 18]){
+        ctx.beginPath(); ctx.arc(0, 0, rr * s, -Math.PI * .88, -Math.PI * .12); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (c.type === 'brain'){
+      // brain coral: a squat dome with wavy grooves
+      ctx.beginPath(); ctx.ellipse(0, -3 * s, 12 * s, 9 * s, 0, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = 'rgba(6,18,31,.35)'; ctx.lineWidth = 1.4 * s;
+      for (let i = 0; i < 3; i++){
+        ctx.beginPath();
+        for (let x2 = -9; x2 <= 9; x2 += 3)
+          ctx.lineTo(x2 * s, (-4 - i * 2.6 + Math.sin(x2 * 1.7 + i) * 1.2) * s);
+        ctx.stroke();
+      }
+    } else {
+      // tube coral: a cluster of upright pipes
+      for (const [ox, len] of [[-6, 10], [0, 15], [6, 11]]){
+        ctx.lineWidth = 5 * s;
+        ctx.beginPath(); ctx.moveTo(ox * s, 2); ctx.lineTo(ox * s + ox * .3, -len * s); ctx.stroke();
+        ctx.fillStyle = 'rgba(6,18,31,.4)';
+        ctx.beginPath(); ctx.arc(ox * s + ox * .3, -len * s, 1.7 * s, 0, 7); ctx.fill();
+        ctx.fillStyle = c.color;
+      }
+    }
+    ctx.restore();
+  }
+}
+
+function drawFood(f){
+  if (f.got) return;
+  const fy = f.y + Math.sin(time * 2 + f.bob) * 6;
+  if (f.kind === 'fish'){
+    const c = f.c || REEF_FISH[0];
+    ctx.save(); ctx.translate(f.x, fy); ctx.scale(f.flip, 1);
+    ctx.fillStyle = c[0];
+    ctx.beginPath(); ctx.ellipse(0, 0, 11, 5.5, 0, 0, 7); ctx.fill();
+    // tail
+    ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(-16, -5 + Math.sin(time * 7 + f.bob) * 2); ctx.lineTo(-16, 5); ctx.closePath(); ctx.fill();
+    // dorsal fin
+    ctx.beginPath(); ctx.moveTo(-3, -4); ctx.lineTo(1, -8.5); ctx.lineTo(4, -4); ctx.closePath(); ctx.fill();
+    // reef stripe
+    ctx.fillStyle = c[1];
+    ctx.beginPath(); ctx.ellipse(1, 0, 2.2, 5.5, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-5.5, 0, 1.4, 4.2, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0a2a43';
+    ctx.beginPath(); ctx.arc(6.5, -1.5, 1.4, 0, 7); ctx.fill();
+    ctx.restore();
+  } else if (f.kind === 'jelly'){
+    ctx.save(); ctx.translate(f.x, fy);
+    ctx.globalAlpha = .85;
+    ctx.fillStyle = '#e8a2c8';
+    ctx.beginPath(); ctx.arc(0, 0, 11, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = 'rgba(232,162,200,.5)';
+    ctx.beginPath(); ctx.rect(-11, 0, 22, 3); ctx.fill();
+    ctx.strokeStyle = 'rgba(232,162,200,.8)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (let i = -1.5; i <= 1.5; i++){
+      ctx.beginPath(); ctx.moveTo(i * 6, 3);
+      ctx.quadraticCurveTo(i * 6 + Math.sin(time * 3 + f.bob + i) * 4, 11, i * 6 + Math.sin(time * 3 + f.bob + i) * 7, 18);
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else { // plastic bag — deceptively jellyfish-shaped
+    ctx.save(); ctx.translate(f.x, fy); ctx.rotate(Math.sin(time * 1.5 + f.bob) * .2);
+    ctx.globalAlpha = .8;
+    ctx.fillStyle = 'rgba(226,236,240,.75)';
+    ctx.beginPath(); ctx.arc(0, 0, 11, Math.PI, 0); ctx.fill();
+    ctx.beginPath(); ctx.rect(-11, 0, 22, 4); ctx.fill();
+    // crinkled tail and handles give it away up close
+    ctx.strokeStyle = 'rgba(226,236,240,.85)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(-3, 10); ctx.lineTo(-7, 15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5, 4); ctx.lineTo(8, 9); ctx.lineTo(4, 14); ctx.stroke();
+    ctx.strokeStyle = 'rgba(180,200,210,.9)';
+    ctx.beginPath(); ctx.arc(-5, -10, 3.5, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(5, -10, 3.5, Math.PI, 0); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawBoatHull(x, w){
+  ctx.fillStyle = '#3d2b1f';
+  ctx.beginPath();
+  ctx.moveTo(x - w, SURF - 6);
+  ctx.lineTo(x + w, SURF - 6);
+  ctx.lineTo(x + w * .68, SURF + 12);
+  ctx.lineTo(x - w * .68, SURF + 12);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5a4030';
+  ctx.fillRect(x - w, SURF - 10, w * 2, 5);
+  ctx.fillStyle = '#26170e';
+  ctx.beginPath(); ctx.arc(x + w * .3, SURF - 22, 5, 0, 7); ctx.fill();
+  ctx.fillRect(x + w * .3 - 4, SURF - 18, 8, 10);
+  ctx.strokeStyle = '#26170e'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x + w * .3 + 3, SURF - 16); ctx.lineTo(x + w * .75, SURF - 30); ctx.stroke();
+}
+
+function drawHook(h){
+  drawBoatHull(h.x - 14, 46);
+  const hy = h.hy || SURF + h.minLen;
+  ctx.strokeStyle = 'rgba(230,238,244,.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(h.x + 20, SURF - 30); ctx.quadraticCurveTo(h.x + 4, SURF + 10, h.x, hy - 12); ctx.stroke();
+  ctx.strokeStyle = '#dfe8ec'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(h.x, hy, 9, -.5 * Math.PI, .75 * Math.PI); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,92,92,.25)';
+  ctx.beginPath(); ctx.arc(h.x + 6, hy - 4, 11 + Math.sin(time * 4) * 2, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ff5c5c';
+  ctx.beginPath(); ctx.arc(h.x + 6, hy - 4, 5, 0, 7); ctx.fill();
+}
+
+function drawNet(h){
+  const hw = h.w / 2, sway = Math.sin(time * 1.4 + h.sway) * 5;
+  ctx.save();
+  ctx.translate(sway * .4, 0);
+  if (h.vx) ctx.transform(1, 0, .06, 1, 0, 0);   // drifting nets lean with the current
+  // the catch: fish already tangled at odd angles, drawn behind the mesh
+  for (const cf of h.caught || []){
+    const fx = h.x + cf.ox * h.w;
+    const fy = h.y0 + cf.oy * (h.y1 - h.y0);
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.rotate(cf.rot + Math.sin(time * 2 + fx) * .07);
+    ctx.fillStyle = cf.c[0];
+    ctx.beginPath(); ctx.ellipse(0, 0, 10, 5, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(-14, -4); ctx.lineTo(-14, 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = cf.c[1];
+    ctx.beginPath(); ctx.ellipse(1, 0, 2, 5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0a2a43';
+    ctx.beginPath(); ctx.arc(6, -1, 1.2, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  // mesh
+  ctx.strokeStyle = 'rgba(222,232,238,.8)'; ctx.lineWidth = 2;
+  ctx.strokeRect(h.x - hw, h.y0, h.w, h.y1 - h.y0);
+  ctx.strokeStyle = 'rgba(222,232,238,.45)'; ctx.lineWidth = 1;
+  for (let x = h.x - hw + 12; x < h.x + hw; x += 12){
+    ctx.beginPath(); ctx.moveTo(x + sway * .2, h.y0); ctx.lineTo(x - sway * .2, h.y1); ctx.stroke();
+  }
+  for (let y = h.y0 + 12; y < h.y1; y += 12){
+    ctx.beginPath(); ctx.moveTo(h.x - hw, y); ctx.lineTo(h.x + hw, y + sway * .15); ctx.stroke();
+  }
+  // buoys along the top edge; weights along the bottom for surface nets
+  ctx.fillStyle = h.mode === 'surface' ? '#ff8f6e' : '#8a9aa5';
+  for (let x = h.x - hw; x <= h.x + hw; x += 20){
+    ctx.beginPath(); ctx.arc(x, h.y0, 4.5, 0, 7); ctx.fill();
+  }
+  if (h.mode !== 'floor'){
+    ctx.fillStyle = '#54646e';
+    for (let x = h.x - hw + 8; x <= h.x + hw; x += 26){
+      ctx.fillRect(x - 2, h.y1 - 1, 4, 7);
+    }
+  }
+  ctx.restore();
+}
+
+function drawPalm(px, py, h, lean){
+  const sway = Math.sin(time * .7 + px) * .015;
+  const cx = px + lean * h * .55, cy = py - h;          // crown
+  const ctlx = px + lean * h * .22, ctly = py - h * .55;
+  // tapered trunk
+  ctx.fillStyle = '#8a5a33';
+  ctx.beginPath();
+  ctx.moveTo(px - 4.5, py + 5);
+  ctx.quadraticCurveTo(ctlx - 3.5, ctly, cx - 2, cy);
+  ctx.lineTo(cx + 2, cy);
+  ctx.quadraticCurveTo(ctlx + 3.5, ctly, px + 4.5, py + 5);
+  ctx.closePath(); ctx.fill();
+  // ring shadows up the trunk
+  ctx.strokeStyle = 'rgba(60,38,20,.5)'; ctx.lineWidth = 1.4;
+  for (const t of [.2, .4, .6, .8]){
+    const bx = (1 - t) * (1 - t) * px + 2 * t * (1 - t) * ctlx + t * t * cx;
+    const by = (1 - t) * (1 - t) * py + 2 * t * (1 - t) * ctly + t * t * cy;
+    const w = 4.5 - 2.2 * t;
+    ctx.beginPath(); ctx.moveTo(bx - w, by); ctx.lineTo(bx + w, by); ctx.stroke();
+  }
+  // drooping filled fronds
+  const fl = 12 + h * .45;
+  for (let i = 0; i < 7; i++){
+    const a = -Math.PI * (.08 + i * .14) + sway;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const tipx = cx + dx * fl, tipy = cy + dy * fl + fl * .55;
+    const mx = cx + dx * fl * .55, my = cy + dy * fl * .55 + fl * .1;
+    ctx.fillStyle = i % 2 ? '#2e8b6a' : '#3aa878';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.quadraticCurveTo(mx - dy * 5, my + dx * 5 - 3, tipx, tipy);
+    ctx.quadraticCurveTo(mx + dy * 5, my - dx * 5 + 2, cx, cy + 2);
+    ctx.closePath(); ctx.fill();
+  }
+  // coconut cluster under the crown
+  ctx.fillStyle = '#6b4a2b';
+  ctx.beginPath(); ctx.arc(cx - 4, cy + 5, 3.4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 3, cy + 6, 3.4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy + 9, 3.2, 0, 7); ctx.fill();
+}
+
+function drawIsland(){
+  const L = level.L;
+  // turquoise lagoon water behind the sand bank, fading at both ends
+  const tint = ctx.createLinearGradient(L + 90, 0, L + 430, 0);
+  tint.addColorStop(0, 'rgba(140,224,238,0)');
+  tint.addColorStop(.2, 'rgba(140,224,238,.26)');
+  tint.addColorStop(.8, 'rgba(140,224,238,.26)');
+  tint.addColorStop(1, 'rgba(140,224,238,0)');
+  ctx.fillStyle = tint;
+  ctx.fillRect(L + 90, SURF, 340, 132);
+
+  // the island: one sideways-S sweep from the lagoon floor up over the dune crest
+  const f0 = L + 330, f1 = L + 560, m2 = L + 880, crestY = SURF - 160;
+  const moundY = x => {
+    if (x < f0) return 235;
+    if (x <= f1){
+      const t = (x - f0) / (f1 - f0), s = t * t * (3 - 2 * t);   // ogee: tangent at both ends
+      return 235 - s * (235 - crestY);
+    }
+    const t = Math.min(1, (x - f1) / (m2 - f1)), s = t * t * (3 - 2 * t);
+    return crestY + s * (SURF + 120 - crestY);
+  };
+  ctx.fillStyle = '#e8c98a';
+  ctx.beginPath();
+  ctx.moveTo(f0, 560);
+  for (let x = f0; x <= m2; x += 16) ctx.lineTo(x, moundY(x));
+  ctx.lineTo(m2, 560);
+  ctx.closePath(); ctx.fill();
+
+  // palm forest along the dune
+  drawPalm(L + 480, moundY(L + 480) + 4, 45, -.35);
+  drawPalm(L + 530, moundY(L + 530) + 4, 68, -.15);
+  drawPalm(L + 575, moundY(L + 575) + 4, 84, 0);
+  drawPalm(L + 620, moundY(L + 620) + 4, 88, .15);
+  drawPalm(L + 665, moundY(L + 665) + 4, 70, .35);
+  drawPalm(L + 705, moundY(L + 705) + 4, 52, .5);
+  // undergrowth between the trunks
+  for (const [bx, br, col] of [[L + 505, 9, '#3aa878'], [L + 553, 11, '#2e8b6a'], [L + 598, 8, '#3aa878'], [L + 643, 10, '#2e8b6a'], [L + 686, 7, '#3aa878']]){
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(bx, moundY(bx) + 3, br, Math.PI, 0); ctx.fill();
+  }
+
+  // foam where the flank crosses the waterline
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = L + 400; x <= L + 500; x += 8)
+    ctx.lineTo(x, SURF + 2 + Math.sin(x * .12 + time * 3) * 1.8);
+  ctx.stroke();
+
+  // the HOME buoy floats in the lagoon
+  ctx.fillStyle = '#ff7a59';
+  ctx.beginPath(); ctx.arc(L + 200, SURF + Math.sin(time * 2) * 3 + 4, 9, 0, 7); ctx.fill();
+  ctx.fillStyle = '#8c5a3a';
+  ctx.font = "13px 'Bungee', cursive"; ctx.textAlign = 'center';
+  ctx.fillText('HOME', L + 200, SURF - 18);
+  ctx.textAlign = 'left';
+}
+
+function drawPlayer(){
+  const p = player;
+  if (p.invuln > 0 && Math.floor(time * 12) % 2 === 0 && !p.dead) return;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  if (p.dead) ctx.rotate(.5);
+  ctx.scale(p.dir, 1);
+  drawSpecies(ctx, p.species, time, p.wobble);
+  ctx.restore();
+}
+
+/* species painter — also used on menu cards (facing right, centered on 0,0) */
+function drawSpecies(c, sp, t, wob){
+  const tail = Math.sin(t * 8) * (4 + (wob || 0) * 6);
+  if (sp === 'sawfish'){
+    c.fillStyle = '#9fb4bf';
+    c.beginPath(); c.ellipse(0, 0, 30, 12, 0, 0, 7); c.fill();
+    c.beginPath(); c.moveTo(-26, 0); c.lineTo(-42, -10 + tail); c.lineTo(-42, 10 + tail); c.closePath(); c.fill();
+    c.fillStyle = '#d8c9a8';
+    c.fillRect(26, -3, 34, 6);
+    c.fillStyle = '#efe6cf';
+    for (let i = 0; i < 6; i++){
+      c.beginPath();
+      c.moveTo(30 + i * 5, -3); c.lineTo(32 + i * 5, -8); c.lineTo(34 + i * 5, -3); c.closePath(); c.fill();
+      c.beginPath();
+      c.moveTo(30 + i * 5, 3); c.lineTo(32 + i * 5, 8); c.lineTo(34 + i * 5, 3); c.closePath(); c.fill();
+    }
+    c.fillStyle = '#7e97a4';
+    c.beginPath(); c.moveTo(-4, -10); c.lineTo(6, -22); c.lineTo(12, -10); c.closePath(); c.fill();
+    c.fillStyle = '#dbe6ea';
+    c.beginPath(); c.ellipse(2, 4, 22, 6, 0, 0, Math.PI); c.fill();
+    c.fillStyle = '#0a2a43';
+    c.beginPath(); c.arc(16, -4, 2.6, 0, 7); c.fill();
+  } else if (sp === 'hammerhead'){
+    c.fillStyle = '#7e97a4';
+    c.beginPath(); c.ellipse(-2, 0, 30, 11, 0, 0, 7); c.fill();
+    c.beginPath(); c.moveTo(-28, 0); c.lineTo(-46, -12 + tail); c.lineTo(-40, 0 + tail); c.lineTo(-46, 10 + tail); c.closePath(); c.fill();
+    c.beginPath(); c.ellipse(30, 0, 8, 17, 0, 0, 7); c.fill();
+    c.fillStyle = '#0a2a43';
+    c.beginPath(); c.arc(31, -13, 2.6, 0, 7); c.fill();
+    c.beginPath(); c.arc(31, 13, 2.6, 0, 7); c.fill();
+    c.fillStyle = '#5d7684';
+    c.beginPath(); c.moveTo(-8, -9); c.lineTo(2, -24); c.lineTo(10, -9); c.closePath(); c.fill();
+    c.fillStyle = '#c8d6dc';
+    c.beginPath(); c.ellipse(-2, 4, 24, 5, 0, 0, Math.PI); c.fill();
+  } else { // turtle
+    c.fillStyle = '#3aa07a';
+    c.beginPath(); c.ellipse(6, -14, 13, 5, -.5 + Math.sin(t * 6) * .25, 0, 7); c.fill();
+    c.beginPath(); c.ellipse(6, 14, 13, 5, .5 - Math.sin(t * 6) * .25, 0, 7); c.fill();
+    c.beginPath(); c.ellipse(-20, 8, 9, 4, .4, 0, 7); c.fill();
+    c.fillStyle = '#2e6b52';
+    c.beginPath(); c.ellipse(-2, 0, 22, 16, 0, 0, 7); c.fill();
+    c.strokeStyle = '#1e4d3a'; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(-2, 0, 15, 10, 0, 0, 7); c.stroke();
+    c.beginPath(); c.moveTo(-2, -16); c.lineTo(-2, 16); c.stroke();
+    c.beginPath(); c.moveTo(-17, -6); c.lineTo(13, -6); c.stroke();
+    c.beginPath(); c.moveTo(-17, 6); c.lineTo(13, 6); c.stroke();
+    c.fillStyle = '#3aa07a';
+    c.beginPath(); c.arc(24, -2, 8, 0, 7); c.fill();
+    c.fillStyle = '#0a2a43';
+    c.beginPath(); c.arc(27, -4, 2.2, 0, 7); c.fill();
+  }
+}
+
+function drawParticles(){
+  for (const p of particles){
+    ctx.globalAlpha = Math.max(0, 1 - p.t / p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x - camX, p.y - camY, p.r, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ============================== menu ============================== */
+function buildMenu(){
+  const row = $('charRow'); row.innerHTML = '';
+  Object.keys(SPECIES).forEach(key => {
+    const sp = SPECIES[key];
+    const b = document.createElement('button');
+    b.className = 'char' + (save.species === key ? ' sel' : '');
+    b.setAttribute('aria-pressed', String(save.species === key));
+    const cv = document.createElement('canvas');
+    cv.width = 130; cv.height = 70;
+    b.appendChild(cv);
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = sp.name;
+    const ds = document.createElement('div'); ds.className = 'ds'; ds.textContent = sp.desc;
+    b.append(nm, ds);
+    b.addEventListener('click', () => {
+      save.species = key; player.species = key; persist();
+      for (const ch of row.children){ ch.classList.remove('sel'); ch.setAttribute('aria-pressed', 'false'); }
+      b.classList.add('sel'); b.setAttribute('aria-pressed', 'true');
+    });
+    row.appendChild(b);
+    b._cv = cv; b._key = key;
+  });
+}
+function buildDiffRow(){
+  const row = $('diffRow'); row.innerHTML = '';
+  DIFF_ORDER.forEach(key => {
+    const b = document.createElement('button');
+    b.className = 'diff' + (save.diff === key ? ' sel' : '');
+    b.textContent = DIFFS[key].label;
+    b.addEventListener('click', () => setDiff(key));
+    b._key = key;
+    row.appendChild(b);
+  });
+}
+function setDiff(key){
+  save.diff = key; persist();
+  for (const b of $('diffRow').children) b.classList.toggle('sel', b._key === key);
+}
+function paintMenuCards(){
+  for (const b of $('charRow').children){
+    const c = b._cv.getContext('2d');
+    c.clearRect(0, 0, 130, 70);
+    c.save(); c.translate(62, 36); c.scale(.9, .9);
+    drawSpecies(c, b._key, time, .3);
+    c.restore();
+  }
+}
+buildMenu();
+buildDiffRow();
+player.species = save.species;
+
+/* ============================== buttons ============================== */
+$('playBtn').addEventListener('click', () => startLevel(save.diff));
+$('introGo').addEventListener('click', beginPlay);
+$('replayBtn').addEventListener('click', () => startLevel(level.diff));
+$('retryBtn').addEventListener('click', () => startLevel(level.diff));
+$('homeMenuBtn').addEventListener('click', backToMenu);
+$('goMenuBtn').addEventListener('click', backToMenu);
+$('exitBtn').addEventListener('click', backToMenu);
+$('pauseExitBtn').addEventListener('click', backToMenu);
+function backToMenu(){
+  level = null; state = 'menu';
+  $('hud').classList.remove('on');
+  buildDiffRow();
+  show('menu');
+}
+$('resumeBtn').addEventListener('click', () => { state = 'play'; hideOverlays(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'play'){ state = 'paused'; show('paused'); }
+});
+
+window.__ls = { get player(){ return player; }, get level(){ return level; }, get state(){ return state; }, startLevel };
+
+/* ============================== loop ============================== */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt);
+  draw();
+  if ($('menu').classList.contains('on')) paintMenuCards();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
