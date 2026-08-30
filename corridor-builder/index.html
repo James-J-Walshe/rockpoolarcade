@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Corridor Builder</title>
+<meta name="description" content="Free strategy puzzle: reconnect fragmented bushland across a suburb with tree plantings, rope bridges and road underpasses. The wildlife crossings are real; South East Queensland builds them for koalas today.">
+<link rel="canonical" href="https://rockpoolarcade.com/corridor-builder/">
+<meta name="theme-color" content="#f7efdc">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Rockpool Arcade">
+<meta property="og:title" content="Corridor Builder">
+<meta property="og:description" content="Reconnect fragmented bushland with plantings, rope bridges and underpasses. A strategy puzzle built on real koala crossings.">
+<meta property="og:url" content="https://rockpoolarcade.com/corridor-builder/">
+<meta property="og:image" content="https://rockpoolarcade.com/corridor-builder/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rockpoolarcade.com/corridor-builder/og-image.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128040;</text></svg>">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Corridor Builder",
+  "url": "https://rockpoolarcade.com/corridor-builder/",
+  "description": "A strategy puzzle about habitat fragmentation. Spend a limited budget on tree plantings, rope bridges and road underpasses to reconnect bushland for koalas and sugar gliders. Based on real wildlife crossings in South East Queensland.",
+  "genre": ["Educational", "Puzzle", "Strategy"],
+  "gamePlatform": ["Web browser", "Desktop", "Tablet", "Mobile"],
+  "playMode": "SinglePlayer",
+  "isAccessibleForFree": true,
+  "operatingSystem": "Any",
+  "applicationCategory": "Game",
+  "inLanguage": "en",
+  "author": { "@type": "Person", "name": "James Walshe" }
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RVWPYEZ4Z4"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date()); gtag('config', 'G-RVWPYEZ4Z4');
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:ital,wght@0,400;0,700;0,800;1,400&display=swap">
+<style>
+  :root{
+    --paper:#f7efdc; --card:#fffdf6; --sandline:#e6d7b4;
+    --ink:#1c3a40; --ink2:#4b656c;
+    --coral:#ff6b4a; --coraldeep:#c94b2b;
+    --gum:#3f8e6b; --gumdeep:#2e6b50;
+    --tide:#197687; --tidedeep:#135e6c;
+    --sun:#efb63c; --sundeep:#8a6414;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%; overscroll-behavior:none;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+  }
+  #stage{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;}
+  canvas{display:block; background:var(--paper); touch-action:none; border-radius:6px;}
+  /* ---------- HUD ---------- */
+  #hud{position:absolute; left:0; right:0; top:0; display:none; padding:10px 14px;
+       pointer-events:none; align-items:center; gap:10px; flex-wrap:wrap; z-index:5;}
+  #hud.on{display:flex;}
+  .hud-box{background:var(--card); border:2px solid var(--sandline);
+           border-radius:10px; padding:6px 12px; display:flex; align-items:center; gap:8px;}
+  #lvlLabel{font-family:'Bungee',cursive; font-size:12px; color:var(--tidedeep); letter-spacing:.5px;}
+  #budget{font-family:'Bungee',cursive; font-size:14px; color:var(--gumdeep);}
+  #budget.low{color:var(--coraldeep);}
+  .chip{font-size:13px; font-weight:800; color:var(--ink2);}
+  .chip.done{color:var(--gumdeep);}
+  #hud button{pointer-events:auto; cursor:pointer; font-family:'Bungee',cursive; font-size:12px;
+    letter-spacing:.5px; border:none; border-radius:10px; padding:9px 14px;}
+  #testBtn{background:var(--coraldeep); color:#fffdf6; box-shadow:0 3px 0 #8f3018;}
+  #resetBtn,#menuBtn{background:transparent; color:var(--tidedeep); border:2px solid var(--tidedeep);}
+  #hud button:active{transform:translateY(2px);}
+  /* toast */
+  #toast{position:absolute; left:50%; bottom:26px; transform:translateX(-50%);
+         background:var(--card); border:2px solid var(--coral); border-radius:12px;
+         padding:12px 20px; max-width:min(90vw,560px); font-size:14px; line-height:1.45;
+         opacity:0; transition:opacity .3s; pointer-events:none; text-align:center; z-index:6; color:var(--ink);}
+  #toast.on{opacity:1;}
+  #toast b{color:var(--coraldeep);}
+  /* ---------- overlays ---------- */
+  .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+           background:rgba(28,58,64,.35); backdrop-filter:blur(3px); z-index:10;}
+  .overlay.on{display:flex;}
+  .card{background:var(--card); border:2px solid var(--sandline); border-radius:18px;
+        padding:30px 36px; max-width:640px; width:min(94vw,640px); text-align:center;
+        box-shadow:0 24px 60px rgba(28,58,64,.35); max-height:92vh; overflow-y:auto; color:var(--ink);}
+  h1{font-family:'Bungee',cursive; font-size:clamp(28px,6vw,46px); margin:0 0 6px; color:var(--gumdeep); text-wrap:balance;}
+  h2{font-family:'Bungee',cursive; font-size:clamp(20px,4vw,28px); margin:0 0 10px; color:var(--ink); text-wrap:balance;}
+  .tag{opacity:.85; margin:0 0 18px; font-size:15.5px;}
+  .fact{background:#e9f2ee; border:2px solid var(--gum); border-radius:10px;
+        padding:12px 16px; font-size:13.5px; line-height:1.5; margin:0 0 20px; text-align:left;}
+  .fact b{color:var(--gumdeep);}
+  .legend{font-size:13px; opacity:.8; margin:0 0 18px;}
+  .btn{font-family:'Bungee',cursive; font-size:16px; color:#fffdf6; background:var(--coraldeep);
+       border:none; border-radius:12px; padding:12px 26px; cursor:pointer; letter-spacing:1px;
+       box-shadow:0 5px 0 #8f3018;}
+  .btn:active{transform:translateY(2px); box-shadow:0 2px 0 #8f3018;}
+  .btn.ghost{background:transparent; color:var(--tidedeep); box-shadow:none; border:2px solid var(--tidedeep); padding:10px 20px;}
+  .row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+  .levels{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:0 0 20px;}
+  .lvbtn{cursor:pointer; background:#eef6f2; border:2px solid var(--sandline); border-radius:12px;
+         padding:14px 10px; font-family:inherit; color:var(--ink); text-align:center;}
+  .lvbtn:hover{border-color:var(--gum);}
+  .lvbtn .nm{font-family:'Bungee',cursive; font-size:12.5px; color:var(--tidedeep); margin-bottom:4px;}
+  .lvbtn .stars{color:var(--sun); font-size:15px; letter-spacing:2px;}
+  .lvbtn:focus-visible,.btn:focus-visible{outline:3px solid var(--tidedeep); outline-offset:2px;}
+  .bigstars{font-size:38px; color:var(--sun); letter-spacing:6px; margin:4px 0 10px;}
+  .home{margin-top:16px; font-size:13px;}
+  .home a{color:var(--tidedeep);}
+  @media (prefers-reduced-motion: reduce){ #toast{transition:none;} }
+</style>
+</head>
+<body>
+
+<div id="stage"><canvas id="game" width="960" height="600"></canvas></div>
+
+<div id="hud">
+  <div class="hud-box"><span id="lvlLabel">LEVEL 1</span></div>
+  <div class="hud-box"><span id="budget">$1,500</span></div>
+  <div class="hud-box" id="goalChips"></div>
+  <button id="testBtn">Release the animals</button>
+  <button id="resetBtn">Reset</button>
+  <button id="menuBtn">Menu</button>
+</div>
+
+<div id="toast"></div>
+
+<div class="overlay on" id="menu">
+  <div class="card">
+    <h1>Corridor Builder</h1>
+    <p class="tag">The suburb grew and the bush broke into islands. You hold the budget:
+    plant corridors, string rope bridges and dig underpasses until every animal can
+    reach every patch of home.</p>
+    <div class="levels" id="levelGrid"></div>
+    <p class="legend">&#127795; Plantings carry every animal &middot; rope bridges carry gliders
+    &middot; underpasses carry everyone. Removing a link refunds every dollar.</p>
+    <p class="home"><a href="https://rockpoolarcade.com/">&#8592; Back to Rockpool Arcade</a></p>
+  </div>
+</div>
+
+<div class="overlay" id="intro">
+  <div class="card">
+    <h2 id="introTitle">First Hop</h2>
+    <p class="tag" id="introDesc"></p>
+    <p class="fact" id="introFact"></p>
+    <button class="btn" id="introGo">Start building</button>
+  </div>
+</div>
+
+<div class="overlay" id="complete">
+  <div class="card">
+    <h2 id="doneTitle">Corridor complete!</h2>
+    <div class="bigstars" id="doneStars">&#9733;&#9733;&#9733;</div>
+    <p class="tag" id="doneSub"></p>
+    <p class="fact" id="doneFact"></p>
+    <div class="row">
+      <button class="btn" id="nextBtn">Next suburb</button>
+      <button class="btn ghost" id="replayBtn">Improve my stars</button>
+      <button class="btn ghost" id="doneMenuBtn">Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================== setup ============================== */
+const CW = 960, CH = 600;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ROPE_COST = 600, UNDER_COST = 1400;
+
+let viewScale = 1;
+function fit(){
+  const s = Math.min(innerWidth / CW, (innerHeight - 8) / CH);
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.style.width  = (CW * s) + 'px';
+  canvas.style.height = (CH * s) + 'px';
+  canvas.width  = Math.round(CW * s * dpr);
+  canvas.height = Math.round(CH * s * dpr);
+  viewScale = s * dpr;
+}
+addEventListener('resize', fit); fit();
+
+const $ = id => document.getElementById(id);
+const overlays = ['menu','intro','complete'];
+function show(id){ overlays.forEach(o => $(o).classList.toggle('on', o === id)); }
+function hideOverlays(){ overlays.forEach(o => $(o).classList.remove('on')); }
+function track(ev, p){ try { if (window.gtag) gtag('event', ev, p || {}); } catch (e) {} }
+
+let save = { stars: {} };
+try { const raw = localStorage.getItem('corridorbuilder'); if (raw) save = Object.assign(save, JSON.parse(raw)); } catch (e) {}
+function persist(){ try { localStorage.setItem('corridorbuilder', JSON.stringify(save)); } catch (e) {} }
+
+/* ============================== audio ============================== */
+let AC = null;
+function beep(freq, dur, type, vol){
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || .07, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  } catch (e) {}
+}
+const sfx = {
+  build:  () => beep(520, .12, 'triangle', .08),
+  remove: () => beep(300, .12, 'triangle', .06),
+  deny:   () => beep(160, .25, 'sawtooth', .07),
+  win:    () => { beep(523, .16, 'triangle', .08); setTimeout(() => beep(659, .16, 'triangle', .08), 130); setTimeout(() => beep(784, .3, 'triangle', .09), 260); },
+  stuck:  () => { beep(240, .2, 'square', .05); setTimeout(() => beep(200, .25, 'square', .05), 180); },
+};
+
+/* ============================== facts ============================== */
+const FACTS = [
+  'A habitat patch on its own works like an island. A corridor of trees turns many small islands into one big home.',
+  'South East Queensland builds real <b>koala underpasses</b> beneath busy roads, with fencing that guides koalas to the safe crossing. Camera traps show koalas learning to use them within months.',
+  '<b>Rope bridges</b> strung high above the road let gliders and possums cross the suburb while cars pass safely below.',
+  'Brisbane&rsquo;s <b>Compton Road wildlife bridge</b> is planted with real bush across the top. Wallabies, koalas, gliders and echidnas all use it.',
+  'Creek corridors work double time: trees along the water cool the creek, feed the fish, and give animals a shady path across the suburb.',
+  'Backyard trees count too. A line of gum trees between bush patches becomes a stepping stone corridor.',
+  'Koalas walk on the ground far more than people expect, which is why safe road crossings matter so much for them.',
+];
+
+/* ============================== levels ============================== */
+/* link kinds: grass (planting, both species), creek (riparian planting, both),
+   road (tap cycles rope $600 gliders only, then underpass $1400 everyone) */
+const LEVELS = [
+  {
+    name: 'First Hop',
+    desc: 'Two pockets of bush, one gap of grass. Plant a corridor and give the koalas one big home.',
+    fact: 0, budget: 1500,
+    roads: [], creeks: [],
+    patches: [
+      { x: 170, y: 300, r: 85, k: 3, g: 0 },
+      { x: 770, y: 310, r: 95, k: 2, g: 0 },
+    ],
+    links: [ [0, 1, 'grass', 1200] ],
+  },
+  {
+    name: 'Sunset Road',
+    desc: 'A busy road cuts the bush in two. Choose the crossing that suits a koala.',
+    fact: 1, budget: 1700,
+    roads: [ { x: 480, y0: 0, y1: 600 } ], creeks: [],
+    patches: [
+      { x: 170, y: 290, r: 85, k: 3, g: 0 },
+      { x: 780, y: 300, r: 90, k: 2, g: 0 },
+    ],
+    links: [ [0, 1, 'road', 0] ],
+  },
+  {
+    name: 'Glider Lane',
+    desc: 'Sugar gliders join the neighbourhood. Rope bridges suit them perfectly; koalas keep their feet on the ground.',
+    fact: 2, budget: 2800,
+    roads: [ { x: 640, y0: 0, y1: 600 } ], creeks: [],
+    patches: [
+      { x: 160, y: 220, r: 80, k: 2, g: 2 },
+      { x: 430, y: 430, r: 80, k: 0, g: 3 },
+      { x: 810, y: 220, r: 85, k: 2, g: 1 },
+    ],
+    links: [ [0, 1, 'grass', 500], [1, 2, 'road', 0], [0, 2, 'road', 0] ],
+  },
+  {
+    name: 'Cooling Creek',
+    desc: 'A creek winds through the suburb. Plantings along the water make a shady highway for everyone.',
+    fact: 4, budget: 3000,
+    roads: [], creeks: [ { y: 380, x0: 0, x1: 960 } ],
+    patches: [
+      { x: 150, y: 160, r: 80, k: 2, g: 0 },
+      { x: 520, y: 140, r: 85, k: 1, g: 3 },
+      { x: 190, y: 510, r: 75, k: 2, g: 0 },
+      { x: 800, y: 500, r: 85, k: 2, g: 2 },
+    ],
+    links: [ [0, 1, 'grass', 600], [0, 2, 'creek', 700], [1, 3, 'creek', 800], [2, 3, 'grass', 900], [1, 2, 'creek', 900] ],
+  },
+  {
+    name: 'The New Estate',
+    desc: 'New houses, new roads, same animals. Plan the whole network before the budget runs dry.',
+    fact: 3, budget: 4600,
+    roads: [ { x: 610, y0: 0, y1: 320 }, { y: 320, x0: 0, x1: 960 } ], creeks: [],
+    patches: [
+      { x: 130, y: 150, r: 75, k: 3, g: 0 },
+      { x: 400, y: 140, r: 75, k: 1, g: 2 },
+      { x: 830, y: 140, r: 80, k: 0, g: 3 },
+      { x: 280, y: 480, r: 80, k: 2, g: 0 },
+      { x: 790, y: 470, r: 85, k: 2, g: 1 },
+    ],
+    links: [ [0, 1, 'grass', 500], [1, 2, 'road', 0], [1, 3, 'road', 0], [3, 4, 'grass', 700], [2, 4, 'road', 0], [0, 3, 'road', 0] ],
+  },
+  {
+    name: 'Whole Suburb',
+    desc: 'Roads, a creek and six pockets of bush. Bring the whole suburb back together.',
+    fact: 6, budget: 6600,
+    roads: [ { x: 330, y0: 0, y1: 600 }, { y: 380, x0: 330, x1: 960 } ],
+    creeks: [ { y: 170, x0: 330, x1: 960 } ],
+    patches: [
+      { x: 150, y: 120, r: 70, k: 2, g: 1 },
+      { x: 150, y: 480, r: 75, k: 2, g: 0 },
+      { x: 560, y: 85,  r: 65, k: 0, g: 2 },
+      { x: 610, y: 275, r: 70, k: 2, g: 2 },
+      { x: 560, y: 520, r: 75, k: 3, g: 0 },
+      { x: 870, y: 520, r: 70, k: 1, g: 2 },
+    ],
+    links: [ [0, 1, 'grass', 600], [0, 2, 'road', 0], [2, 3, 'creek', 700], [1, 4, 'road', 0], [3, 4, 'road', 0], [4, 5, 'grass', 800], [3, 5, 'road', 0] ],
+  },
+];
+
+/* ============================== state ============================== */
+let state = 'menu';           // menu | intro | play | done
+let L = null, lvIndex = 0, spent = 0, links = [], houses = [], cars = [];
+let time = 0, celebrate = 0, travellers = [], leaves = [];
+let toastTimer = null;
+
+function toast(html, ms){
+  $('toast').innerHTML = html;
+  $('toast').classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').classList.remove('on'), ms || 4200);
+}
+
+function money(n){ return '$' + n.toLocaleString('en-AU'); }
+
+function linkCost(l){
+  if (l.built === 'rope') return ROPE_COST;
+  if (l.built === 'under') return UNDER_COST;
+  if (l.built) return l.cost;
+  return 0;
+}
+
+function startLevel(i){
+  lvIndex = i; L = LEVELS[i];
+  spent = 0; celebrate = 0; travellers = []; leaves = [];
+  links = L.links.map(d => ({ a: d[0], b: d[1], kind: d[2], cost: d[3], built: null }));
+  buildHouses(); buildCars();
+  $('lvlLabel').textContent = 'LEVEL ' + (i + 1) + ' &middot; ' + L.name;
+  $('lvlLabel').innerHTML = 'LEVEL ' + (i + 1) + ' &middot; ' + L.name.toUpperCase();
+  $('introTitle').textContent = 'Level ' + (i + 1) + ': ' + L.name;
+  $('introDesc').textContent = L.desc;
+  $('introFact').innerHTML = '&#128161; <b>Did you know?</b> ' + FACTS[L.fact];
+  updateHud();
+  show('intro'); state = 'intro';
+}
+function beginPlay(){
+  hideOverlays(); $('hud').classList.add('on'); state = 'play';
+  track('level_start', { game: 'corridor-builder', level: lvIndex + 1 });
+  if (lvIndex === 0) toast('Tap a dotted line to build it. Tap a built link to remove it, with a full refund.', 6000);
+  if (LEVELS[lvIndex].roads.length && lvIndex === 1) toast('Tap the crossing to cycle: rope bridge, then underpass, then clear.', 6000);
+}
+
+/* houses + cars are decoration built from the road layout */
+function buildHouses(){
+  houses = [];
+  const clearOfPatches = (x, y) => L.patches.every(p => Math.hypot(p.x - x, p.y - y) > p.r + 55);
+  const clearOfCreeks = (x, y) => L.creeks.every(c => Math.abs(c.y - y) > 50);
+  const clearOfRoads = (x, y) => L.roads.every(r =>
+    r.x !== undefined ? (Math.abs(r.x - x) > 48 || y < (r.y0 || 0) - 20 || y > (r.y1 || CH) + 20)
+                      : (Math.abs(r.y - y) > 48 || x < (r.x0 || 0) - 20 || x > (r.x1 || CW) + 20));
+  for (const r of L.roads){
+    if (r.x !== undefined){
+      for (let y = (r.y0 || 0) + 55; y < (r.y1 || CH) - 30; y += 105){
+        for (const side of [-1, 1]){
+          const hx = r.x + side * 62, hy = y + (side < 0 ? 0 : 48);
+          if (clearOfPatches(hx, hy) && clearOfCreeks(hx, hy) && clearOfRoads(hx, hy) && hy < CH - 30)
+            houses.push({ x: hx, y: hy, c: ['#ff6b4a', '#197687', '#efb63c'][houses.length % 3] });
+        }
+      }
+    } else {
+      for (let x = (r.x0 || 0) + 60; x < (r.x1 || CW) - 30; x += 115){
+        for (const side of [-1, 1]){
+          const hx = x + (side < 0 ? 0 : 52), hy = r.y + side * 62;
+          if (clearOfPatches(hx, hy) && clearOfCreeks(hx, hy) && clearOfRoads(hx, hy) && hy > 24 && hy < CH - 30)
+            houses.push({ x: hx, y: hy, c: ['#197687', '#efb63c', '#ff6b4a'][houses.length % 3] });
+        }
+      }
+    }
+  }
+}
+function buildCars(){
+  cars = [];
+  for (let ri = 0; ri < L.roads.length; ri++){
+    cars.push({ road: ri, t: Math.random(), speed: .06 + Math.random() * .04, lane: -1, c: '#c94b2b' });
+    cars.push({ road: ri, t: Math.random(), speed: .05 + Math.random() * .04, lane: 1, c: '#135e6c' });
+  }
+}
+
+/* ============================== connectivity ============================== */
+function passable(l, species){
+  if (!l.built) return false;
+  if (l.built === 'plant' || l.built === 'rip' || l.built === 'under') return true;
+  return species === 'g';   // rope bridge
+}
+function components(species){
+  const n = L.patches.length, parent = [...Array(n).keys()];
+  const find = x => parent[x] === x ? x : (parent[x] = find(parent[x]));
+  for (const l of links) if (passable(l, species)) parent[find(l.a)] = find(l.b);
+  return L.patches.map((p, i) => find(i));
+}
+function speciesStatus(species){
+  const key = species === 'k' ? 'k' : 'g';
+  const homes = L.patches.map((p, i) => i).filter(i => L.patches[i][key] > 0);
+  if (homes.length < 2) return { present: homes.length > 0, linked: homes.length, total: homes.length, ok: true };
+  const comp = components(species);
+  const byComp = {};
+  for (const i of homes) byComp[comp[i]] = (byComp[comp[i]] || 0) + 1;
+  const best = Math.max(...Object.values(byComp));
+  return { present: true, linked: best, total: homes.length, ok: best === homes.length };
+}
+
+/* ============================== hud ============================== */
+function updateHud(){
+  const left = L.budget - spent;
+  $('budget').textContent = money(left) + ' left';
+  $('budget').classList.toggle('low', left < L.budget * .15);
+  const chips = [];
+  const ks = speciesStatus('k');
+  if (ks.present) chips.push('<span class="chip' + (ks.ok ? ' done' : '') + '">&#128040; koalas ' + ks.linked + ' of ' + ks.total + ' linked</span>');
+  const gs = speciesStatus('g');
+  if (gs.present) chips.push('<span class="chip' + (gs.ok ? ' done' : '') + '">&#128063; gliders ' + gs.linked + ' of ' + gs.total + ' linked</span>');
+  $('goalChips').innerHTML = chips.join(' &nbsp; ');
+}
+
+/* ============================== input ============================== */
+function canvasPos(e){
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * CW, y: (e.clientY - r.top) / r.height * CH };
+}
+function distToSeg(px, py, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+canvas.addEventListener('pointerdown', e => {
+  if (state !== 'play') return;
+  e.preventDefault();
+  const p = canvasPos(e);
+  let best = null, bestD = 26;
+  for (const l of links){
+    const A = L.patches[l.a], B = L.patches[l.b];
+    const d = distToSeg(p.x, p.y, A.x, A.y, B.x, B.y);
+    if (d < bestD){ bestD = d; best = l; }
+  }
+  if (best) toggleLink(best);
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function toggleLink(l){
+  const left = L.budget - spent;
+  if (l.kind === 'road'){
+    if (!l.built){
+      if (left < ROPE_COST) return denied(ROPE_COST);
+      l.built = 'rope'; spent += ROPE_COST; sfx.build();
+    } else if (l.built === 'rope'){
+      spent -= ROPE_COST;
+      if (L.budget - spent < UNDER_COST){ l.built = null; sfx.remove(); }
+      else { l.built = 'under'; spent += UNDER_COST; sfx.build(); }
+    } else { spent -= UNDER_COST; l.built = null; sfx.remove(); }
+  } else {
+    if (!l.built){
+      if (left < l.cost) return denied(l.cost);
+      l.built = l.kind === 'creek' ? 'rip' : 'plant'; spent += l.cost; sfx.build();
+    } else { spent -= l.cost; l.built = null; sfx.remove(); }
+  }
+  updateHud();
+}
+function denied(cost){
+  sfx.deny();
+  toast('That link costs ' + money(cost) + '. Free up budget by removing another link first.');
+}
+
+/* ============================== test & win ============================== */
+$('testBtn').addEventListener('click', () => {
+  if (state !== 'play') return;
+  const ks = speciesStatus('k'), gs = speciesStatus('g');
+  if (ks.ok && gs.ok){
+    state = 'done';
+    celebrate = 3.2; spawnCelebration();
+    sfx.win();
+    const left = L.budget - spent, frac = left / L.budget;
+    const stars = frac >= .15 ? 3 : frac >= .05 ? 2 : 1;
+    save.stars[lvIndex] = Math.max(save.stars[lvIndex] || 0, stars); persist();
+    track('level_complete', { game: 'corridor-builder', level: lvIndex + 1, stars, left });
+    setTimeout(() => {
+      $('doneTitle').textContent = L.name + ' reconnected!';
+      $('doneStars').innerHTML = '&#9733;'.repeat(stars) + '<span style="opacity:.25">' + '&#9733;'.repeat(3 - stars) + '</span>';
+      $('doneSub').textContent = 'Every animal can reach every patch, with ' + money(left) + ' left over.' +
+        (stars < 3 ? ' A leaner network earns more stars.' : ' A three star build. The council is thrilled.');
+      $('doneFact').innerHTML = '&#128161; <b>Did you know?</b> ' + FACTS[(L.fact + 3) % FACTS.length];
+      $('nextBtn').style.display = lvIndex + 1 < LEVELS.length ? '' : 'none';
+      $('hud').classList.remove('on');
+      show('complete');
+    }, 3300);
+  } else {
+    sfx.stuck();
+    const msgs = [];
+    if (!ks.ok) msgs.push('The koalas can reach ' + ks.linked + ' of ' + ks.total + ' bush patches so far. Koalas keep to the ground: plantings, creek plantings and underpasses all carry them.');
+    if (!gs.ok) msgs.push('The gliders can reach ' + gs.linked + ' of ' + gs.total + ' patches so far. Gliders travel by treetop: plantings, rope bridges and underpasses all carry them.');
+    toast(msgs.join('<br>'), 6500);
+  }
+});
+$('resetBtn').addEventListener('click', () => {
+  if (state !== 'play') return;
+  for (const l of links) l.built = null;
+  spent = 0; updateHud(); sfx.remove();
+});
+$('menuBtn').addEventListener('click', backToMenu);
+$('doneMenuBtn').addEventListener('click', backToMenu);
+function backToMenu(){
+  state = 'menu'; L = null;
+  $('hud').classList.remove('on');
+  buildMenu(); show('menu');
+}
+$('introGo').addEventListener('click', beginPlay);
+$('nextBtn').addEventListener('click', () => startLevel(lvIndex + 1));
+$('replayBtn').addEventListener('click', () => startLevel(lvIndex));
+
+function spawnCelebration(){
+  travellers = [];
+  for (const l of links){
+    if (!l.built) continue;
+    travellers.push({ l, t: Math.random() * .5, dir: 1,
+      species: l.built === 'rope' ? 'g' : (Math.random() < .6 ? 'k' : 'g') });
+  }
+  leaves = [];
+  const n = reduceMotion ? 8 : 26;
+  for (let i = 0; i < n; i++)
+    leaves.push({ x: Math.random() * CW, y: -20 - Math.random() * 200,
+      vy: 40 + Math.random() * 50, sway: Math.random() * 6.28, r: 4 + Math.random() * 5 });
+}
+
+/* ============================== menu ============================== */
+function buildMenu(){
+  const grid = $('levelGrid'); grid.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const b = document.createElement('button');
+    b.className = 'lvbtn';
+    const s = save.stars[i] || 0;
+    b.innerHTML = '<div class="nm">' + (i + 1) + '. ' + lv.name + '</div>' +
+      '<div class="stars">' + (s ? '&#9733;'.repeat(s) : '&#9734;&#9734;&#9734;') + '</div>';
+    b.addEventListener('click', () => startLevel(i));
+    grid.appendChild(b);
+  });
+}
+buildMenu();
+
+/* ============================== drawing ============================== */
+function draw(){
+  ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
+  // ground
+  ctx.fillStyle = '#eee3c3';
+  ctx.fillRect(0, 0, CW, CH);
+  ctx.fillStyle = 'rgba(63,142,107,.08)';
+  for (let i = 0; i < 7; i++){
+    ctx.beginPath(); ctx.arc((i * 217) % CW, (i * 149) % CH, 90 + (i % 3) * 40, 0, 7); ctx.fill();
+  }
+  if (!L){ drawMenuBackdrop(); return; }
+
+  for (const c of L.creeks) drawCreek(c);
+  for (const r of L.roads) drawRoad(r);
+  for (const h of houses) drawHouse(h);
+  drawCars();
+  for (const l of links) drawLink(l);
+  for (const p of L.patches) drawPatch(p);
+  drawTravellers();
+  drawLeaves();
+}
+
+function drawMenuBackdrop(){
+  // a calm sample suburb behind the menu card
+  drawCreek({ y: 430, x0: 0, x1: 960 });
+  drawRoad({ x: 620, y0: 0, y1: 600 });
+  drawPatch({ x: 180, y: 200, r: 95, k: 2, g: 1 });
+  drawPatch({ x: 820, y: 180, r: 80, k: 1, g: 2 });
+}
+
+function drawCreek(c){
+  ctx.strokeStyle = '#9fd0dc'; ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let x = c.x0; x <= c.x1; x += 24)
+    ctx.lineTo(x, c.y + Math.sin(x * .02) * 10);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(25,118,135,.4)'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let x = c.x0; x <= c.x1; x += 24)
+    ctx.lineTo(x, c.y + Math.sin(x * .02) * 10 + Math.sin(time + x * .05) * 2);
+  ctx.stroke();
+}
+
+function drawRoad(r){
+  ctx.fillStyle = '#54626c';
+  if (r.x !== undefined) ctx.fillRect(r.x - 27, r.y0, 54, r.y1 - r.y0);
+  else ctx.fillRect(r.x0, r.y - 27, r.x1 - r.x0, 54);
+  ctx.strokeStyle = 'rgba(247,239,220,.8)'; ctx.lineWidth = 3; ctx.setLineDash([16, 14]);
+  ctx.beginPath();
+  if (r.x !== undefined){ ctx.moveTo(r.x, r.y0); ctx.lineTo(r.x, r.y1); }
+  else { ctx.moveTo(r.x0, r.y); ctx.lineTo(r.x1, r.y); }
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawHouse(h){
+  ctx.fillStyle = '#fffdf6';
+  ctx.fillRect(h.x - 16, h.y - 10, 32, 22);
+  ctx.fillStyle = h.c;
+  ctx.beginPath();
+  ctx.moveTo(h.x - 19, h.y - 10); ctx.lineTo(h.x, h.y - 24); ctx.lineTo(h.x + 19, h.y - 10);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(28,58,64,.35)';
+  ctx.fillRect(h.x - 4, h.y + 2, 8, 10);
+}
+
+function drawCars(){
+  for (const car of cars){
+    const r = L.roads[car.road];
+    car.t += car.speed * 0.016 * (reduceMotion ? .4 : 1);
+    if (car.t > 1) car.t = 0;
+    let x, y, w, h;
+    if (r.x !== undefined){
+      x = r.x + car.lane * 12; y = (r.y0 || 0) + (car.lane > 0 ? car.t : 1 - car.t) * ((r.y1 - r.y0) || CH);
+      w = 12; h = 22;
+    } else {
+      y = r.y + car.lane * 12; x = (r.x0 || 0) + (car.lane > 0 ? car.t : 1 - car.t) * ((r.x1 - r.x0) || CW);
+      w = 22; h = 12;
+    }
+    ctx.fillStyle = car.c;
+    ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, 4); ctx.fill();
+  }
+}
+
+function crossingPoint(l){
+  const A = L.patches[l.a], B = L.patches[l.b];
+  for (const r of L.roads){
+    if (r.x !== undefined && (A.x - r.x) * (B.x - r.x) < 0){
+      const t = (r.x - A.x) / (B.x - A.x);
+      const y = A.y + (B.y - A.y) * t;
+      if (y >= (r.y0 || 0) && y <= (r.y1 || CH)) return { x: r.x, y, vertical: true };
+    }
+    if (r.y !== undefined && (A.y - r.y) * (B.y - r.y) < 0){
+      const t = (r.y - A.y) / (B.y - A.y);
+      const x = A.x + (B.x - A.x) * t;
+      if (x >= (r.x0 || 0) && x <= (r.x1 || CW)) return { x, y: r.y, vertical: false };
+    }
+  }
+  return null;
+}
+
+function drawLink(l){
+  const A = L.patches[l.a], B = L.patches[l.b];
+  const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+  if (!l.built){
+    ctx.strokeStyle = 'rgba(28,58,64,.35)'; ctx.lineWidth = 3; ctx.setLineDash([7, 9]);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]);
+    const label = l.kind === 'road' ? money(ROPE_COST) + ' / ' + money(UNDER_COST) : money(l.cost);
+    pill(mx, my, label, '#fffdf6', '#4b656c');
+    return;
+  }
+  // built path
+  if (l.built === 'plant' || l.built === 'rip'){
+    ctx.strokeStyle = l.built === 'rip' ? '#2e8b8b' : '#3f8e6b'; ctx.lineWidth = 5; ctx.setLineDash([2, 12]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]);
+    const len = Math.hypot(B.x - A.x, B.y - A.y), n = Math.max(3, Math.floor(len / 55));
+    for (let i = 1; i < n; i++){
+      const t = i / n;
+      drawTree(A.x + (B.x - A.x) * t, A.y + (B.y - A.y) * t, .7, l.built === 'rip');
+    }
+    pill(mx, my + 20, money(l.cost) + (l.built === 'rip' ? ' creek planting' : ' planting'), '#e9f2ee', '#2e6b50');
+  } else {
+    ctx.strokeStyle = '#3f8e6b'; ctx.lineWidth = 5; ctx.setLineDash([2, 12]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]);
+    const cp = crossingPoint(l);
+    if (cp){
+      if (l.built === 'rope'){
+        // two poles and a rope arcing over the road
+        const dx = cp.vertical ? 40 : 0, dy = cp.vertical ? 0 : 40;
+        ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cp.x - dx, cp.y - dy); ctx.lineTo(cp.x - dx * .95, cp.y - dy * .95 - 26); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cp.x + dx, cp.y + dy); ctx.lineTo(cp.x + dx * .95, cp.y + dy * .95 - 26); ctx.stroke();
+        ctx.strokeStyle = '#5b4327'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cp.x - dx * .95, cp.y - dy * .95 - 26);
+        ctx.quadraticCurveTo(cp.x, cp.y - 14, cp.x + dx * .95, cp.y + dy * .95 - 26);
+        ctx.stroke();
+        pill(mx, my + 20, money(ROPE_COST) + ' rope bridge', '#fdf1e2', '#8a5a33');
+      } else {
+        // underpass mouth on each verge and a dashed path beneath the road
+        ctx.fillStyle = '#1c3a40';
+        const dx = cp.vertical ? 27 : 0, dy = cp.vertical ? 0 : 27;
+        ctx.beginPath(); ctx.ellipse(cp.x - dx, cp.y - dy, cp.vertical ? 7 : 13, cp.vertical ? 13 : 7, 0, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cp.x + dx, cp.y + dy, cp.vertical ? 7 : 13, cp.vertical ? 13 : 7, 0, 0, 7); ctx.fill();
+        ctx.strokeStyle = 'rgba(247,239,220,.65)'; ctx.lineWidth = 3; ctx.setLineDash([4, 6]);
+        ctx.beginPath(); ctx.moveTo(cp.x - dx, cp.y - dy); ctx.lineTo(cp.x + dx, cp.y + dy); ctx.stroke(); ctx.setLineDash([]);
+        pill(mx, my + 20, money(UNDER_COST) + ' underpass', '#e2ecef', '#135e6c');
+      }
+    }
+  }
+}
+
+function pill(x, y, text, bg, fg){
+  ctx.font = "800 12px 'Nunito', sans-serif";
+  const w = ctx.measureText(text).width + 16;
+  ctx.fillStyle = bg;
+  ctx.strokeStyle = 'rgba(28,58,64,.25)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - 11, w, 22, 11); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y + 1);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawPatch(p){
+  // organic bush blob
+  ctx.fillStyle = '#5da583';
+  blob(p.x, p.y, p.r, 0); ctx.fill();
+  ctx.fillStyle = '#3f8e6b';
+  blob(p.x, p.y, p.r * .82, 2); ctx.fill();
+  // gum trees
+  const tn = Math.max(3, Math.round(p.r / 22));
+  for (let i = 0; i < tn; i++){
+    const a = (i / tn) * 6.283 + p.x * .01;
+    drawTree(p.x + Math.cos(a) * p.r * .5, p.y + Math.sin(a) * p.r * .45, 1);
+  }
+  // residents
+  let slot = 0;
+  for (let i = 0; i < (p.k || 0); i++) drawKoala(p.x - 20 + (slot++ % 3) * 22, p.y + 8 + Math.floor(slot / 3) * 20);
+  for (let i = 0; i < (p.g || 0); i++) drawGlider(p.x - 20 + (slot++ % 3) * 22, p.y + 8 + Math.floor(slot / 3) * 20);
+}
+
+function blob(x, y, r, seed){
+  ctx.beginPath();
+  for (let i = 0; i <= 12; i++){
+    const a = (i / 12) * 6.283;
+    const rr = r * (1 + Math.sin(a * 3 + seed + x * .02) * .09);
+    const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr * .88;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function drawTree(x, y, s, blue){
+  ctx.strokeStyle = '#8a5a33'; ctx.lineWidth = 3 * s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x, y + 8 * s); ctx.lineTo(x, y - 4 * s); ctx.stroke();
+  ctx.fillStyle = blue ? '#4da3a0' : '#2e6b50';
+  ctx.beginPath(); ctx.arc(x - 4 * s, y - 8 * s, 6 * s, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 4 * s, y - 9 * s, 7 * s, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y - 14 * s, 6 * s, 0, 7); ctx.fill();
+}
+
+function drawKoala(x, y){
+  ctx.fillStyle = '#9aa5ab';
+  ctx.beginPath(); ctx.arc(x - 6, y - 6, 4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 6, y - 6, 4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5b666c';
+  ctx.beginPath(); ctx.ellipse(x, y + 1.5, 2.6, 3.4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#1c3a40';
+  ctx.beginPath(); ctx.arc(x - 3.5, y - 1.5, 1.1, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 3.5, y - 1.5, 1.1, 0, 7); ctx.fill();
+}
+
+function drawGlider(x, y){
+  ctx.fillStyle = '#c9b08c';
+  ctx.beginPath(); ctx.ellipse(x, y, 8, 5.5, .4, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#6d573a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x - 7, y + 4); ctx.quadraticCurveTo(x - 13, y + 9, x - 15, y + 3); ctx.stroke();
+  ctx.fillStyle = '#1c3a40';
+  ctx.beginPath(); ctx.arc(x + 5, y - 2.5, 1.2, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#6d573a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x + 2, y - 4.5); ctx.lineTo(x + 6, y - 6); ctx.stroke();
+}
+
+function drawTravellers(){
+  if (celebrate <= 0) return;
+  for (const tr of travellers){
+    tr.t += .008 * tr.dir * (reduceMotion ? .5 : 1);
+    if (tr.t > 1){ tr.t = 1; tr.dir = -1; }
+    if (tr.t < 0){ tr.t = 0; tr.dir = 1; }
+    const A = L.patches[tr.l.a], B = L.patches[tr.l.b];
+    const x = A.x + (B.x - A.x) * tr.t, y = A.y + (B.y - A.y) * tr.t - 6;
+    tr.species === 'k' ? drawKoala(x, y) : drawGlider(x, y);
+  }
+}
+function drawLeaves(){
+  if (celebrate <= 0) return;
+  ctx.fillStyle = 'rgba(63,142,107,.7)';
+  for (const lf of leaves){
+    lf.y += lf.vy * .016; lf.sway += .05;
+    const x = lf.x + Math.sin(lf.sway) * 18;
+    ctx.beginPath(); ctx.ellipse(x, lf.y, lf.r, lf.r * .45, lf.sway, 0, 7); ctx.fill();
+  }
+}
+
+/* ============================== loop ============================== */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  time += dt;
+  if (celebrate > 0) celebrate -= dt;
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
